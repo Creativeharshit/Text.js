@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en" data-theme="blue">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#050914">
+<title>TermiCast</title>
+<style>
+/* ============ THEME — CINEMATIC DARK LUXURY ============ */
+:root{--bg:#04070D;--ch:#0B111C;--gr:#111A28;--a:#35BFFF;--b:#8587FF;--c:#FF557A;--tx:#EDF6FF;--dim:#8393A8;--glass:rgba(160,196,255,.055);--line:rgba(168,205,255,.14);--sans:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;--mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace}
+[data-theme=blue]{--a:#35BFFF;--b:#8587FF;--c:#FF557A;--bg:#04070D;--ch:#0B111C;--gr:#111A28}
+[data-theme=ice]{--a:#72E4FF;--b:#4A8DFF;--c:#FF6684}
+[data-theme=ember]{--a:#FF6A24;--b:#FFB45C;--c:#ff4d3d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:400 13px/1.55 var(--sans);overflow:hidden;letter-spacing:.015em}
+/* ambient orange light leaks + film grain */
+body:before{content:"";position:fixed;inset:-25%;z-index:-1;background:
+ radial-gradient(38% 28% at 88% 6%,color-mix(in srgb,var(--a) 28%,transparent),transparent 70%),
+ radial-gradient(45% 30% at 6% 96%,color-mix(in srgb,var(--b) 17%,transparent),transparent 70%),
+ radial-gradient(30% 22% at 55% 45%,rgba(90,160,255,.035),transparent);animation:drift 24s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(3%,2%) scale(1.07)}}
+body:after{content:"";position:fixed;inset:0;z-index:100;pointer-events:none;opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.noanim *{animation:none!important;transition:none!important}
+#code-bg{position:fixed;z-index:0;inset:0;overflow:hidden;pointer-events:none;opacity:.105;color:#70AFFF;font:400 10px/1.9 var(--mono);white-space:pre;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+#code-bg .code-col{position:absolute;top:-8%;left:4%;width:44%;height:116%;overflow:hidden;transform:rotate(-5deg);text-shadow:0 0 12px rgba(50,145,255,.34)}#code-bg .code-col:last-child{left:59%;top:12%;opacity:.55;transform:rotate(4deg)}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i .f{fill:currentColor;stroke:none}
+/* ============ HEADER ============ */
+header{position:fixed;top:0;left:0;right:0;z-index:20;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;background:linear-gradient(#050505ee,#05050099);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:6px}
+.brand{flex:1;min-width:0}
+.logo{font-weight:200;font-size:22px;letter-spacing:.02em;line-height:1}
+.logo b{font-weight:700;color:var(--a);text-shadow:0 0 18px color-mix(in srgb,var(--a) 45%,transparent)}
+.sub{font-size:8px;color:var(--dim);letter-spacing:.1em;white-space:nowrap;text-transform:uppercase;margin-top:4px}
+.ic{background:var(--glass);border:1px solid var(--line);color:var(--tx);width:34px;height:34px;border-radius:12px;display:grid;place-items:center;padding:0;transition:.3s;position:relative;overflow:hidden}
+.ic:active,.ic:hover{color:var(--a);border-color:color-mix(in srgb,var(--a) 60%,transparent);box-shadow:0 0 18px -4px var(--a)}
+#srv{margin-top:7px;font:400 9px var(--mono);letter-spacing:.12em;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px;color:var(--dim);border:1px solid var(--line);border-radius:20px;padding:3px 10px;background:var(--glass)}
+#srv i{width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
+#srv.on{color:var(--tx)}#srv.on i{background:var(--a);box-shadow:0 0 12px var(--a)}
+#event-strip{display:block;margin-top:4px;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#7694B9;font:400 8px/1.3 var(--mono);letter-spacing:.04em}
+/* ============ VIEWS ============ */
+main{position:fixed;z-index:1;top:104px;bottom:64px;left:0;right:0;overflow:hidden}
+.view{position:absolute;inset:0;padding:6px 16px 14px;overflow:auto;display:none}
+.view.on{display:block;animation:vin .65s cubic-bezier(.2,.7,.2,1) both}
+@keyframes vin{from{opacity:0;filter:blur(12px);transform:translateY(10px)}to{opacity:1;filter:none;transform:none}}
+.hd{margin:2px 0 14px}.hd small{font:400 9.5px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--a)}
+.hd h1{margin:2px 0 0;font:200 34px/1.05 Georgia,"Times New Roman",serif;letter-spacing:-.015em}
+.hero{position:relative;overflow:hidden;padding:22px 20px;margin:6px 0 16px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(125deg,color-mix(in srgb,var(--a) 15%,transparent),rgba(120,145,255,.045) 52%,rgba(6,10,18,.88));box-shadow:inset 0 1px rgba(255,255,255,.08),0 16px 42px rgba(0,0,0,.32);animation:heroIn .72s cubic-bezier(.18,.8,.25,1) both}
+.hero:after{content:"";position:absolute;width:170px;height:170px;right:-75px;top:-95px;border-radius:50%;background:color-mix(in srgb,var(--a) 22%,transparent);filter:blur(46px);pointer-events:none;animation:glowBreath 7s ease-in-out infinite alternate}
+@keyframes heroIn{from{opacity:0;transform:translateY(13px) scale(.985)}to{opacity:1;transform:none}}@keyframes glowBreath{to{opacity:.55;transform:scale(1.14)}}
+.hero .eyebrow{font:400 9px var(--mono);letter-spacing:.22em;color:var(--b);text-transform:uppercase}.hero h2{font:200 36px/1.04 Georgia,"Times New Roman",serif;margin:8px 0}.hero p{color:var(--dim);font-size:12px;margin:0 0 16px;max-width:280px}.hero-actions{display:flex;gap:8px;flex-wrap:wrap}.hero .btn{position:relative;z-index:1}
+.home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}.home-stat{padding:12px 13px;border:1px solid var(--line);border-radius:16px;background:var(--glass);box-shadow:inset 0 1px rgba(255,255,255,.035)}.home-stat small{display:block;color:var(--dim);font:400 9px var(--mono);letter-spacing:.12em;text-transform:uppercase}.home-stat b{display:block;margin-top:4px;font-size:13px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.home-stat .tiny-action{background:none;border:0;padding:6px 0 0;color:var(--a);font:400 9px var(--mono);letter-spacing:.08em;text-transform:uppercase}.home-section{margin:18px 0 8px;color:var(--dim);font:400 9px var(--mono);letter-spacing:.18em;text-transform:uppercase}.home-empty{padding:15px;border:1px dashed var(--line);border-radius:14px;color:var(--dim);font-size:12px}.log-panel{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}.log-panel summary{background:transparent;border:0;padding:4px 0;color:var(--dim);font:400 9px var(--mono);letter-spacing:.15em;text-transform:uppercase}.log-panel #term{height:155px;margin-top:8px}
+.method-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}.method-row>div{flex:1;min-width:0}.method-row b,.method-row small{display:block}.method-row b{font-size:11px;color:var(--tx)}.method-row small{font:400 8px var(--mono);color:var(--dim);margin-top:3px}.method-row .ic{width:30px;height:30px;border-radius:50%;color:var(--a);font-weight:700}.method-row .btn{padding:8px 10px}.method-note{padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(60,140,255,.06);font:400 10px/1.6 var(--mono);color:var(--dim)}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;background:linear-gradient(rgba(5,9,17,.72),rgba(4,7,13,.97));backdrop-filter:blur(18px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--dim);font:400 9px var(--sans);letter-spacing:.2em;text-transform:uppercase;padding:10px 0 9px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:.4s;position:relative}
+nav button.on{color:var(--tx)}nav button.on svg{color:var(--a);filter:drop-shadow(0 0 8px var(--a))}
+nav button.on:after{content:"";position:absolute;top:0;width:38px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--a),var(--b));box-shadow:0 0 13px var(--a);animation:navPulse 2.8s ease-in-out infinite alternate}@keyframes navPulse{to{opacity:.55;width:30px}}
+nav.lock button{opacity:.3;pointer-events:none}nav.lock button[data-v=term]{opacity:1;pointer-events:auto}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){header,nav{background:#080808f5}}
+/* ============ TERMINAL ============ */
+#term{height:calc(100% - 52px);overflow:auto;white-space:pre-wrap;word-break:break-word;font:400 11px/1.75 var(--mono)}
+.ln.perm{color:var(--b)}.ln.err{color:var(--c)}.ln.ok{color:var(--a)}.ln.dim{color:var(--dim)}
+.ln.gone{transition:all .7s;opacity:0;filter:blur(10px);max-height:0;overflow:hidden}
+.ln:before{content:"› ";color:var(--dim)}
+#cmd{display:flex;gap:8px;margin-top:8px;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--glass);font-family:var(--mono)}
+#cmd span{color:var(--a)}#cmd input{flex:1;background:none;border:0;outline:0;color:var(--tx);font:inherit}
+/* ============ LISTS ============ */
+input.q,.field,select.field{width:100%;background:var(--glass);border:1px solid var(--line);color:var(--tx);border-radius:14px;padding:12px 14px;font:inherit;outline:0;margin-bottom:10px;transition:.3s}
+input.q:focus,.field:focus{border-color:color-mix(in srgb,var(--a) 70%,transparent);box-shadow:0 0 22px -8px var(--a)}
+.row{padding:12px 14px;border-radius:16px;margin-bottom:8px;background:var(--glass);border:1px solid var(--line);position:relative;overflow:hidden;animation:vin .55s both;transition:.3s}
+.row:nth-child(2){animation-delay:.04s}.row:nth-child(3){animation-delay:.08s}.row:nth-child(4){animation-delay:.12s}.row:nth-child(5){animation-delay:.16s}.row:nth-child(6){animation-delay:.2s}
+.row:active{background:rgba(255,255,255,.07)}
+.row .t{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{color:var(--dim);font:400 10px var(--mono);letter-spacing:.08em;margin-top:2px}
+.row.now{border-color:color-mix(in srgb,var(--a) 70%,transparent);box-shadow:0 0 26px -10px var(--a),inset 0 0 30px -20px var(--a)}
+h4{margin:18px 0 8px;color:var(--a);font:400 9.5px var(--mono);letter-spacing:.22em}
+details{margin-bottom:8px}summary{padding:12px 14px;border-radius:16px;background:var(--glass);border:1px solid color-mix(in srgb,var(--a) 35%,transparent);cursor:pointer;list-style:none}
+details .row{margin-left:14px}
+/* ============ PLAYER ============ */
+video#pv{width:100%;max-height:32vh;background:#000;border-radius:20px;border:1px solid var(--line);transition:filter .4s;box-shadow:0 20px 60px -20px color-mix(in srgb,var(--a) 50%,transparent)}
+#np{margin:12px 0 4px;font-size:18px;font-weight:300;color:var(--tx)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.btn{background:var(--glass);border:1px solid var(--line);color:var(--tx);border-radius:14px;padding:10px 14px;font:400 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;transition:.3s}
+.btn:active{border-color:var(--a);color:var(--a)}
+.btn.on{background:linear-gradient(135deg,var(--a),var(--b));color:#140800;font-weight:600;border-color:transparent;box-shadow:0 8px 28px -10px var(--a)}
+.btn.red{color:var(--c);border-color:color-mix(in srgb,var(--c) 50%,transparent)}
+.btn:disabled{opacity:.4}
+.btn:focus-visible,.ic:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+.ctl .btn{padding:10px 16px}
+input[type=range]{width:100%;accent-color:var(--a)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:3px 10px;margin:2px;color:var(--dim);font:400 10px var(--mono)}
+.dim{color:var(--dim)}
+body.theater header,body.theater nav{display:none}body.theater main{top:0;bottom:0}body.theater #v-player video{max-height:56vh;border-radius:0}body.theater #v-player{padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom)}
+/* ============ CINEMATIC PLAYER ============ */
+#v-player{padding:0 0 calc(14px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 35%,rgba(27,112,191,.12),transparent 55%)}
+.player-top{display:flex;align-items:center;gap:10px;padding:8px 2px 12px}.player-track{min-width:0;flex:1}.player-track small{display:block;color:var(--dim);font:400 8px var(--mono);letter-spacing:.16em}.player-track b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:400}.player-icon{width:38px;height:38px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--glass);color:var(--tx);font:400 20px var(--mono)}
+.player-stage{height:min(43vh,360px);min-height:210px;position:relative;overflow:hidden;background:#000;border:1px solid rgba(130,191,255,.23);border-radius:23px;box-shadow:0 20px 60px -24px rgba(30,145,255,.58);isolation:isolate}.player-stage video#pv{position:absolute;inset:0;width:100%;height:100%;max-height:none;object-fit:contain;border:0;border-radius:0;box-shadow:none;z-index:0}.stage-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.58),transparent 28%,transparent 56%,rgba(0,0,0,.75));z-index:1}.stage-top,.stage-controls{position:absolute;z-index:2;left:14px;right:14px;display:flex;align-items:center}.stage-top{top:10px;justify-content:space-between;color:#eaf6ff;font:400 8px var(--mono);letter-spacing:.12em}.stage-center{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:62px;height:62px;border-radius:50%;border:1px solid rgba(255,255,255,.8);background:rgba(3,9,17,.45);backdrop-filter:blur(12px);color:#fff;font-size:23px;box-shadow:0 0 30px rgba(53,191,255,.24)}.stage-controls{bottom:8px;display:block}.seek-line{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;color:#eff8ff;font:400 9px var(--mono)}.seek-line input{margin:0}.stage-transport{display:flex;align-items:center;justify-content:space-around;margin-top:4px}.stage-transport button{border:0;background:transparent;color:#fff;font:400 16px var(--mono);padding:8px 6px}.stage-transport button:active,.player-icon:active{color:var(--a);transform:scale(.94)}.player-shortcuts{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:15px 0 8px}.quick-action{border:0;background:none;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:5px;font:400 9px var(--sans)}.quick-action i{width:48px;height:48px;border:1px solid var(--line);background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.015));box-shadow:inset 0 1px rgba(255,255,255,.08),0 9px 20px #0005;border-radius:50%;display:grid;place-items:center;color:var(--tx);font:400 17px var(--mono);font-style:normal}.quick-action.active i{border-color:var(--a);color:var(--a);box-shadow:0 0 20px -10px var(--a)}.player-title{font-size:20px;font-weight:300;margin:11px 2px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.player-modes{display:flex;gap:7px;overflow:auto;padding:2px 0 10px}.mode-pill{flex:none;border:1px solid var(--line);border-radius:25px;background:rgba(255,255,255,.025);color:var(--tx);padding:10px 12px;font:400 8px var(--mono);letter-spacing:.12em}.mode-pill.on{color:#07101a;background:linear-gradient(110deg,#3bbaff,#8f8bff);border-color:transparent;box-shadow:0 7px 22px -10px var(--a)}.volume-label{color:var(--tx);font-size:13px}.volume-label b{color:var(--a);font-family:var(--mono)}.volume-label small{display:block;color:var(--dim);font-size:9px}.player-section{border-top:1px solid var(--line);margin-top:12px;padding-top:3px}.precision-controls{margin:3px 0}.player-stage.mirror video{transform:scaleX(-1)}.player-stage.night:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:rgba(255,116,30,.08);mix-blend-mode:screen}.player-stage.empty:before{content:"TERMICAST · READY FOR MEDIA";position:absolute;inset:0;display:grid;place-items:center;color:#6683a5;font:400 9px var(--mono);letter-spacing:.18em;z-index:1}
+.radar-protocol-head{padding:12px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(120deg,rgba(45,145,255,.1),rgba(125,130,255,.04));margin-bottom:10px}.radar-protocol-head b,.radar-protocol-head small{display:block;font-family:var(--mono)}.radar-protocol-head b{color:var(--a);font-size:10px;letter-spacing:.13em}.radar-protocol-head small{margin-top:4px;color:var(--dim);font-size:8px}.radar-filters{display:flex;gap:5px;margin-top:10px}.radar-filter{border:1px solid var(--line);border-radius:20px;background:transparent;color:var(--dim);font:400 8px var(--mono);padding:6px 9px}.radar-filter.on{color:#06101a;background:var(--a);border-color:var(--a)}.radar-device{display:flex;gap:9px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line);animation:vin .25s both}.radar-dot{width:8px;height:8px;border-radius:50%;background:#55bdff;box-shadow:0 0 12px currentColor;flex:none}.radar-dot.bt{background:#9c85ff}.radar-dot.dlna{background:#48dfb1}.radar-dot.lan{background:#ffb45c}.radar-meta{min-width:0;flex:1}.radar-meta>*{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.radar-meta small,.radar-meta span{color:var(--dim);font:400 8px var(--mono)}.radar-meta b{font-size:11px;font-weight:400}.radar-device .btn{padding:7px 9px;font-size:8px}
+body.theater #v-player{padding:0}body.theater .player-top,body.theater .player-shortcuts,body.theater .player-title,body.theater .player-modes,body.theater .volume-label,body.theater #vol,body.theater .player-section,body.theater .precision-controls{display:none}body.theater #v-player .player-stage{position:fixed;inset:0;z-index:25;width:100vw;height:100dvh;max-height:none;border-radius:0}body.theater #v-player .player-stage video#pv{width:100%;height:100%;max-height:none}
+/* ============ CARD / MODAL — fade + blur + glitch ============ */
+#layer{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(10px);padding:18px;animation:vin .4s both}
+#layer.on{display:flex}
+.card{width:100%;max-width:430px;max-height:82vh;overflow:auto;background:linear-gradient(160deg,rgba(14,23,38,.94),rgba(7,11,18,.96));border:1px solid var(--line);border-radius:26px;padding:22px;backdrop-filter:blur(22px);box-shadow:0 30px 80px -20px #000,0 0 50px -36px var(--a);animation:enter .28s cubic-bezier(.2,.8,.25,1) both;position:relative}
+.card:after{content:"";position:absolute;inset:0;border-radius:26px;border-top:1px solid rgba(255,255,255,.12);pointer-events:none}
+@keyframes enter{from{opacity:0;transform:translateY(10px) scale(.985);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+.card h3{margin:0 0 10px;font-weight:500;font-size:18px;letter-spacing:.04em;color:var(--tx)}
+.card .body{color:#d6d6d6;margin-bottom:12px}
+.card .body small{color:var(--dim)}
+.card .body b{font-weight:500;color:var(--tx)}
+.ps{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font:400 11px var(--mono);letter-spacing:.06em}
+.ps em{font-style:normal;margin-left:auto;color:var(--dim)}
+.ps .st{width:16px;text-align:center;color:var(--dim)}.ps.ok .st{color:var(--a)}.ps.bad .st{color:var(--c)}
+.ps.run .st{animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.25}}
+.set{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.set label{flex:1;font-size:13px}.set small{display:block;color:var(--dim);font-size:10.5px}
+.set .field{width:48%;margin:0;padding:8px 10px}
+.set input[type=checkbox]{appearance:none;width:42px;height:24px;border-radius:14px;background:#2a2a2a;position:relative;border:1px solid var(--line);transition:.3s;flex:none}
+.set input[type=checkbox]:after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--dim);transition:.3s}
+.set input[type=checkbox]:checked{background:color-mix(in srgb,var(--a) 35%,#111);border-color:var(--a)}
+.set input[type=checkbox]:checked:after{left:20px;background:var(--a);box-shadow:0 0 10px var(--a)}
+.card h5{margin:16px 0 2px;color:var(--a);font:400 9.5px var(--mono);letter-spacing:.22em}
+.ripple:after{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,255,255,.3) 10%,transparent 11%) center/0 0 no-repeat;transition:background-size .4s,opacity .6s;pointer-events:none}
+.ripple:active:after{background-size:300% 300%;opacity:0;transition:0s}
+</style>
+</head>
+<body>
+<div id="code-bg" aria-hidden="true"><div class="code-col">01  [SYS_INIT] boot_sequence()\A02  mount_local_media('/storage')\A03  bind_http_server(port=8765)\A04  ssdp.discover('MediaRenderer')\A05  if network.offline: local_mode()\A06  renderer = await discover_tv()\A07  stream.range(bytes=0-65535)\A08  queue.next().preflight()\A09  session.restore(last_position)\A10  permission_gate.verify()\A11  event_bus.emit('SERVER_READY')\A12  player.decoder.hardware = true\A13  subtitle.match(video.stem)\A14  socket.reconnect(backoff='exp')\A15  log.write(level='info')\A16  await playback.start()\A17  // local-first · private\A18  [READY] TermiCast v2.0\A19  network.route = 'wlan0'\A20  cache.trim(max_memory=low)\A21  cast.protocol = 'UPnP/AVT'\A22  renderer.state = 'IDLE'\A23  library.scan(async=true)\A24  // all systems nominal</div><div class="code-col">0x00  CONNECTIVITY :: LOCAL\A01  wifi.status = await ping()\A02  bluetooth.paired_devices()\A03  permission.request('media')\A04  decoder.select(capabilities)\A05  http.header('Accept-Ranges')\A06  tv.transport = 'AVTransport'\A07  media.mime = detect(extension)\A08  await service.foreground()\A09  localStorage.persist(queue)\A0A  console.write(timestamped)\A0B  room.sync(latency_compensated)\A0C  stream.retry(exponential_backoff)\A0D  playback.seek(frame=1)\A0E  security.pin(rate_limit=5)\A0F  // NO CLOUD REQUIRED\A10  bitrate = telemetry.actual\A11  file.uri = contentResolver.open()\A12  visual.motion = reduced_motion\A13  socket.close(on='stop')\A14  state.persist(on='pause')\A15  cast.disconnect(cleanup=true)\A16  queue.shuffle(seed=random)\A17  spectrum.native_only()\A18  captions.load('matching.srt')\A19  decoder.errors.report()\A1A  // SYSTEM READY</div></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="i-radar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle class="f" cx="12" cy="12" r="1.2"/><path d="M12 12l6-5"/></symbol>
+<symbol id="i-cast" viewBox="0 0 24 24"><path d="M3 8V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6M3 12a9 9 0 0 1 9 9M3 16a5 5 0 0 1 5 5M3 20h.01"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2.5"/><circle cx="10" cy="12" r="2.5"/><circle cx="18" cy="18" r="2.5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5V21h16"/></symbol>
+<symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path class="f" d="M12 3a9 9 0 0 0 0 18z"/></symbol>
+<symbol id="i-term" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9l3 3-3 3M13 15h4"/></symbol>
+<symbol id="i-files" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-queue" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7M17 14l4 3-4 3z"/></symbol>
+<symbol id="i-player" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></symbol>
+<symbol id="i-prev" viewBox="0 0 24 24"><path d="M6 5v14M19 5l-9 7 9 7z"/></symbol>
+<symbol id="i-next" viewBox="0 0 24 24"><path d="M18 5v14M5 5l9 7-9 7z"/></symbol>
+<symbol id="i-b10" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/><text class="f" x="12" y="15.5" font-size="7" text-anchor="middle">10</text></symbol>
+<symbol id="i-f10" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/><text class="f" x="12" y="15.5" font-size="7" text-anchor="middle">10</text></symbol>
+<symbol id="i-pp" viewBox="0 0 24 24"><path class="f" d="M5 5l8 7-8 7z"/><path d="M16 5v14M20 5v14"/></symbol>
+</defs></svg>
+<header>
+  <div class="top">
+    <div class="brand"><div class="logo" id="logo">Termi<b>Cast</b></div><div class="sub">core system · engineered by Harshit</div></div>
+    <button class="ic ripple" id="b-radar" title="devices"><svg class="i"><use href="#i-radar"/></svg></button>
+    <button class="ic ripple" id="b-hub" title="casting protocols"><svg class="i"><use href="#i-cast"/></svg></button>
+    <button class="ic ripple" id="b-set" title="settings"><svg class="i"><use href="#i-set"/></svg></button>
+    <button class="ic ripple" id="b-man" title="manual"><svg class="i"><use href="#i-book"/></svg></button>
+    <button class="ic ripple" id="b-theme" title="theme"><svg class="i"><use href="#i-theme"/></svg></button>
+  </div>
+  <div id="srv"><i></i><span>SERVER …</span></div>
+  <div id="event-strip">00 | [--:--:--] CORE WAITING FOR INITIALIZATION</div>
+</header>
+<main>
+  <section class="view on" id="v-term">
+    <div class="hd"><small>[ SYS_INIT ] · LOCAL MEDIA STUDIO</small><h1>System Dashboard</h1></div>
+    <div class="hero"><div class="eyebrow">Your living room, in sync</div><h2>Play something<br>worth the screen.</h2><p>Local media, private playback, and a receiver on your network.</p><div class="hero-actions"><button class="btn ripple" id="home-browse">Browse library</button><button class="btn ripple" id="home-resume">Resume</button></div></div>
+    <div class="home-grid"><div class="home-stat"><small>Media library</small><b id="home-count">Scanning…</b></div><div class="home-stat"><small>Server</small><b id="home-server">Checking…</b><button class="tiny-action" id="home-server-toggle">Stop server</button></div><div class="home-stat"><small>Network address</small><b id="home-address">—</b></div><div class="home-stat"><small>Network mode</small><b id="home-network">Checking…</b></div><div class="home-stat"><small>Device · CPU</small><b id="home-device">Checking…</b></div><div class="home-stat"><small>Receiver</small><b id="home-receiver">Browser receiver</b></div></div>
+    <div class="home-section">Continue watching</div><div id="home-continue"></div>
+    <details class="log-panel"><summary>System console · diagnostics and commands</summary><div id="term"></div><div id="cmd"><span>&gt;</span><input id="ci" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="help"></div></details>
+  </section>
+  <section class="view" id="v-files"><div class="hd"><small>[ EXPLORER ] · MEDIA VAULT</small><h1>Library</h1></div><button class="btn ripple" id="mount-folder">Mount folder</button><input class="q" id="fq" placeholder="search: >500mb  video  favorites  unwatched  series:naruto  name…"><div id="fl"></div><div class="home-section">Now playing · controls live in CMD_CTR</div><button class="row" id="explorer-now" style="display:block;width:100%;text-align:left;color:inherit">No media selected</button></section>
+  <section class="view" id="v-queue"><div class="hd"><small>[ NEURAL_Q ] · QUEUE & PREFLIGHT</small><h1>Queue worker</h1></div><div class="home-grid"><div class="home-stat"><small>Queued items</small><b id="neural-count">0</b></div><div class="home-stat"><small>Next item</small><b id="neural-next">—</b></div><div class="home-stat"><small>Title parse</small><b id="neural-parse">Idle</b></div><div class="home-stat"><small>Preflight</small><b id="neural-preflight">Not checked</b></div></div><div class="btns"><button class="btn ripple" id="q-preflight">Check next media</button><button class="btn ripple" id="q-clear">Clear queue</button><label class="chip"><input type="checkbox" id="auto" checked> auto-next</label></div><div id="ql"></div></section>
+  <section class="view" id="v-player">
+    <div class="player-top"><button class="player-icon" id="player-back" aria-label="Back">‹</button><div class="player-track"><small>TERMICAST · NOW PLAYING</small><b id="np">— nothing playing —</b></div><button class="player-icon" id="player-cast" aria-label="Cast">⌁</button><button class="player-icon" id="player-sub" aria-label="Subtitles">CC</button><button class="player-icon" id="player-menu" aria-label="Player tools">⋮</button></div>
+    <div class="player-stage" id="player-stage"><video id="pv" playsinline></video><div class="stage-shade"></div><div class="stage-top"><span id="stage-status">LOCAL PLAYER · READY</span><button class="player-icon" id="player-full" aria-label="Theater mode">⛶</button></div><button class="stage-center" id="c-pp" aria-label="Play or pause">▶</button><div class="stage-controls"><div class="seek-line"><span id="tm">00:00 / 00:00</span><input type="range" id="seek" min="0" max="1000" value="0"></div><div class="stage-transport"><button id="c-prev" aria-label="Previous">|◀</button><button id="c-b10" aria-label="Back 10 seconds">↶10</button><button id="c-f10" aria-label="Forward 10 seconds">10↷</button><button id="c-next" aria-label="Next">▶|</button><button id="player-stage-full" aria-label="Theater mode">⛶</button></div></div></div>
+    <div class="player-shortcuts"><button class="quick-action" id="player-night"><i>☾</i><small>Night</small></button><button class="quick-action" id="player-ab"><i>AB</i><small id="ab-label">A-B repeat</small></button><button class="quick-action" id="player-mirror"><i>◫</i><small>Mirror</small></button><button class="quick-action" id="player-bookmark"><i>▮</i><small>Bookmark</small></button><button class="quick-action" id="player-timer"><i>◷</i><small>Sleep timer</small></button></div>
+    <div class="player-title" id="player-title">Select a media file</div><div class="player-modes"><button class="mode-pill" data-m="tv">TV ONLY</button><button class="mode-pill" data-m="phone">MOBILE ONLY</button><button class="mode-pill" data-m="dual">DUAL SYNC</button><button class="mode-pill" data-m="split">SPLIT AUDIO</button><button class="mode-pill" data-m="dlna">DLNA</button></div>
+    <div class="volume-label">VOLUME <b id="vl">100%</b><small>TV boost is receiver dependent</small></div><input type="range" id="vol" min="0" max="200" value="100">
+    <div class="player-section"><h4>TIMESTAMP SKIP</h4><div class="btns"><input class="field" id="sk-f" placeholder="from 05:00" style="width:30%;margin:0"><input class="field" id="sk-t" placeholder="to 07:00" style="width:30%;margin:0"><button class="btn ripple" id="sk-add">Add</button></div><div id="sk-l"></div></div>
+    <div class="player-section"><h4>CMD_CTR · BINGE / THEATER / PARTY</h4><div class="btns"><button class="btn ripple" id="intro-start">Set intro start</button><button class="btn ripple" id="intro-end">Set intro end</button><button class="btn ripple" id="intro-toggle">Intro skip off</button><button class="btn ripple" id="theater-toggle">Theater mode</button><button class="btn ripple" id="party-open">LAN watch party</button></div><div class="chip" id="party-state">Party disconnected</div></div>
+    <div class="dim">Frame step estimate: 1/25s · Fade <input class="field" id="fade" value="400" style="width:80px;display:inline-block;margin:0;padding:6px 10px"> ms · latency <b id="lat">–</b> ms</div>
+    <div class="btns ctl precision-controls"><button class="btn ripple" id="c-frame-back">[ &lt;1F ]</button><button class="btn ripple" id="c-frame-next">[ 1F &gt; ]</button></div>
+  </section>
+</main>
+<nav>
+  <button data-v="term" class="on"><svg class="i"><use href="#i-term"/></svg>SYS_INIT</button>
+  <button data-v="files"><svg class="i"><use href="#i-files"/></svg>EXPLORER</button>
+  <button data-v="queue"><svg class="i"><use href="#i-queue"/></svg>NEURAL_Q</button>
+  <button data-v="player"><svg class="i"><use href="#i-player"/></svg>CMD_CTR</button>
+</nav>
+<div id="layer"></div>
+
+
+<script>
+/* ============ HELPERS ============ */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+$$('.code-col').forEach(x=>x.innerHTML=x.textContent.replace(/\\A/g,'<br>'));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const fmt=ms=>{let s=Math.round(ms/1000),h=s/3600|0,m=(s%3600)/60|0;s%=60;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s).padStart(2,'0')};
+const B=window.TermiBridge;
+let TOKEN=LS('tc_token',''),files=[],queue=LS('tc_queue',[]),W=LS('tc_watch',{}),SK=LS('tc_skips',{}),intro=LS('tc_intro',{start:null,end:null,enabled:false}),partyRoom=LS('tc_party',''),clientId=LS('tc_client_id','client-'+Math.random().toString(36).slice(2)),partyApplying=false,cur=null,mode=LS('tc_mode','phone'),info={ip:location.hostname,port:location.port},booted=false,tvState=null,activeDlna=null,dlnaPaused=true;
+SV('tc_client_id',clientId);
+
+async function api(p,o={}){o.headers=Object.assign({'X-Token':TOKEN},o.headers||{});const r=await fetch(p,o);if(r.status===401){await pairCard();return api(p,o)}return r.json()}
+const send=o=>api('/api/send',{method:'POST',body:JSON.stringify(o)});
+
+/* ============ CARD (fade+blur+glitch) ============ */
+function card(title,html,btns=[]){
+  const L=$('#layer');L.classList.add('on');
+  const c=document.createElement('div');c.className='card';
+  c.innerHTML=`<h3>${title}</h3><div class="body">${html}</div><div class="btns"></div>`;
+  const close=()=>{c.remove();if(!L.children.length)L.classList.remove('on')};
+  btns.forEach(([t,fn,cls])=>{const b=document.createElement('button');b.className='btn ripple '+(cls||'');b.textContent=t;b.onclick=async()=>{const r=fn?await fn(c,b):0;if(r!==false)close()};c.querySelector('.btns').appendChild(b)});
+  L.appendChild(c);return{el:c,close};
+}
+function pairCard(){return new Promise((res,rej)=>{card('PAIR_DEVICE','Enter the 6-digit PIN shown in the TermiCast app (Terminal → <b>pin</b>).<input class="field" id="pp" inputmode="numeric" maxlength="6" style="margin-top:8px">',[['PAIR',async c=>{const r=await fetch('/api/pair?pin='+c.querySelector('#pp').value);const j=await r.json();if(j.token){TOKEN=j.token;SV('tc_token',TOKEN);res()}else{c.querySelector('.body').insertAdjacentHTML('beforeend','<div class="ln err">wrong PIN'+(j.wait?' — locked '+j.wait+'s':'')+'</div>');return false}}]])})}
+
+/* ============ TERMINAL (typewriter queue) ============ */
+const T=$('#term'),Q=[];let busy=false,logSeq=LS('tc_log_seq',0),logBook=LS('tc_log',[]);
+for(const item of logBook.slice(-80)){const d=document.createElement('div');d.className='ln '+(item.cls||'');d.textContent=item.line;T.appendChild(d)}
+function say(t,cls=''){const now=new Date(),stamp=now.toTimeString().slice(0,8),entry={cls,line:String(++logSeq).padStart(2,'0')+' | ['+stamp+'] '+String(t)};logBook.push(entry);if(logBook.length>160)logBook=logBook.slice(-160);SV('tc_log_seq',logSeq);SV('tc_log',logBook);$('#event-strip').textContent=entry.line;return new Promise(res=>{Q.push({t:entry.line,cls,res});pump()})}
+function pump(){if(busy)return;const j=Q.shift();if(!j)return;busy=true;const d=document.createElement('div');d.className='ln '+j.cls;T.appendChild(d);let i=0;(function tick(){i+=1+(Q.length>>1);d.textContent=j.t.slice(0,i);T.scrollTop=T.scrollHeight;if(i<j.t.length)setTimeout(tick,10);else{busy=false;j.res(d);pump()}})()}
+const hist=[];let hi=0;
+const cmds={
+  help:{d:'list commands',f:async()=>{for(const k in cmds)await say(k.padEnd(10)+cmds[k].d,'dim')}},
+  clear:{d:'clear screen',f:()=>{T.innerHTML=''}},
+  device:{d:'device info',f:async()=>{await refreshInfo();const d=info.device||{};await say(`${d.brand||''} ${d.model||'?'} | Android ${d.android||'?'} | CPU x${d.cpus||'?'} | ${screen.width}x${screen.height} | ${navigator.hardwareConcurrency||'?'} cores`)}},
+  ip:{d:'server address',f:async()=>{await refreshInfo();await say(`controller: ${info.ip}:${info.port}`);await say(`TV page:    http://${info.ip}:${info.port}/tv`,'ok')}},
+  'server':{d:'server --check',f:async()=>{const t=performance.now();try{await fetch('/api/ping');await say(`stream_daemon [ACTIVE] ${Math.round(performance.now()-t)}ms`,'ok')}catch(e){await say('stream_daemon [DOWN]','err')}}},
+  tv:{d:'tv --scan (receivers connected)',f:async()=>{const c=await api('/api/clients');const t=c.filter(x=>x.role==='tv');await say(t.length?`${t.length} TV receiver(s): ${t.map(x=>x.ip).join(', ')}`:'no TV receiver. Open http://'+info.ip+':'+info.port+'/tv on TV browser',t.length?'ok':'err')}},
+  files:{d:'files --scan',f:async()=>{await scanFiles(true)}},
+  allscan:{d:'rescan whole device',f:async()=>{await scanFiles(true)}},
+  queue:{d:'queue --list | --add <q> | --clear',f:async a=>{if(a[0]==='--clear'){queue=[];saveQ();return say('queue cleared')}if(a[0]==='--add'){const m=search(a.slice(1).join(' '));m.forEach(f=>addQ(f.id));return say(`added ${m.length}`)}if(!queue.length)return say('queue empty','dim');for(let i=0;i<queue.length;i++){const f=byId(queue[i]);await say(`${i+1}. ${f?clean(f.name):'?'}`)}}},
+  play:{d:'play <n|name>',f:async a=>{const x=a.join(' ');let id=/^\d+$/.test(x)?queue[+x-1]:(search(x)[0]||{}).id;if(!id)return say('not found','err');play(id);await say('playing '+clean(byId(id).name),'ok')}},
+  pause:{d:'pause',f:()=>ctl('pause')},resume:{d:'resume',f:()=>ctl('play')},stop:{d:'stop',f:()=>{ctl('pause');ctl('seek',0)}},
+  next:{d:'next',f:()=>step(1)},prev:{d:'previous',f:()=>step(-1)},
+  theme:{d:'theme [ember|amber|copper|sand|mono]',f:async a=>{setTheme(a[0]||nextTheme());await say('theme: '+document.documentElement.dataset.theme)}},
+  pin:{d:'show pairing PIN (for remote devices)',f:async()=>{const j=await api('/api/pin');await say('PIN: '+(j.pin||'local only'),'ok')}}
+};
+async function run(line){for(const part of line.split('&&')){const a=part.trim().split(/\s+/).filter(Boolean);if(!a.length)continue;const c=cmds[a[0]];if(!c){await say('unknown: '+a[0]+' (try help)','err');continue}try{await c.f(a.slice(1))}catch(e){await say('error: '+e.message,'err')}}}
+$('#ci').addEventListener('keydown',e=>{const i=e.target;if(e.key==='Enter'&&i.value.trim()){hist.push(i.value);hi=hist.length;say(i.value,'dim');run(i.value);i.value=''}else if(e.key==='ArrowUp'&&hi>0){i.value=hist[--hi]}else if(e.key==='ArrowDown'){i.value=hist[++hi]||'';hi=Math.min(hi,hist.length)}else if(e.key==='Tab'){e.preventDefault();const m=Object.keys(cmds).filter(k=>k.startsWith(i.value));if(m.length===1)i.value=m[0]+' '}});
+
+/* ============ THEME / NAV ============ */
+const THEMES=['blue','ice','ember'];
+const setTheme=t=>{if(THEMES.includes(t)){document.documentElement.dataset.theme=t;SV('tc_theme',t)}};
+const nextTheme=()=>THEMES[(THEMES.indexOf(document.documentElement.dataset.theme)+1)%THEMES.length];
+setTheme(LS('tc_theme','blue'));$('#b-theme').onclick=()=>{const t=nextTheme();setTheme(t);say('UI theme changed → '+t,'dim')};
+function tab(v){$$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='files')renderFiles();if(v==='queue')renderQueue();if(v==='player')renderPlayer()}
+$$('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.v));
+
+/* ============ AI-ish engine (offline): clean names, series, fuzzy, filters ============ */
+const junk=n=>n.replace(/\.[a-z0-9]{2,4}$/i,'').replace(/\[[^\]]*\]|\([^)]*\)/g,' ').replace(/\b(2160p|1080p|720p|480p|web-?dl|webrip|bluray|brrip|x26[45]|hevc|aac|10bit|hdr|dual|audio|multi|esub|hindi|eng)\b/ig,' ').replace(/[._]+/g,' ').replace(/\s+/g,' ').trim();
+const clean=n=>junk(n)||n;
+function parseEp(raw){const n=junk(raw);let m,r=(s,se,e)=>{s=s.replace(/[-\s]+$/,'').trim();return s?{series:s,s:+se,e:+e,key:s.toLowerCase()}:null};
+  if(m=n.match(/^(.*?)\s*[Ss](\d{1,2})\s*[Ee](\d{1,3})/))return r(m[1],m[2],m[3]);
+  if(m=n.match(/^(.*?)\s*(\d{1,2})x(\d{1,3})\b/))return r(m[1],m[2],m[3]);
+  if(m=n.match(/^(.*?)\s*\b(?:ep|episode|e)\.?\s*(\d{1,3})\b/i))return r(m[1],1,m[2]);
+  if(m=n.match(/^(.*?[A-Za-z].*?)\s*-\s*(\d{1,3})$/))return r(m[1],1,m[2]);
+  if(m=n.match(/^([A-Za-z].*?)\s+(\d{1,3})$/))return r(m[1],1,m[2]);return null}
+function lev(a,b){const d=[];for(let i=0;i<=a.length;i++){d[i]=[i];for(let j=1;j<=b.length;j++)d[i][j]=i?0:j}for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+function fuzzy(name,term){const n=clean(name).toLowerCase();if(n.includes(term))return true;if(!S.fuzzy||term.length<3)return false;const tol=term.length>4?S.tol:Math.min(1,S.tol);return n.split(/\s+/).some(w=>w.length>=2&&lev(w.slice(0,term.length+1),term)<=tol)}
+function search(q){let out=files.filter(f=>f.type!=='subtitle');for(const t of q.toLowerCase().split(/\s+/).filter(Boolean)){let m;
+  if(m=t.match(/^([<>])(\d+(?:\.\d+)?)(mb|gb)$/)){const v=m[2]*(m[3]==='gb'?1024:1)*1048576;out=out.filter(f=>m[1]==='>'?f.size>v:f.size<v)}
+  else if(m=t.match(/^([<>])(\d+)m$/)){const v=m[2]*60000;out=out.filter(f=>m[1]==='>'?f.dur>v:f.dur<v)}
+  else if(t==='video'||t==='audio')out=out.filter(f=>f.type===t);
+  else if(t==='favorite'||t==='favorites')out=out.filter(f=>FAV&&FAV.has(f.id));
+  else if(t==='unwatched')out=out.filter(f=>!(W[f.id]||{}).n);
+  else if(t==='watched')out=out.filter(f=>(W[f.id]||{}).n);
+  else if(m=t.match(/^series:(.+)$/))out=out.filter(f=>{const e=parseEp(f.name);return e&&fuzzy(e.series,m[1])});
+  else out=out.filter(f=>f.type!=='subtitle'&&fuzzy(f.name,t))}return out}
+const byId=id=>files.find(f=>f.id===id);
+function subtitleFor(video){const stem=n=>String(n||'').replace(/\.[^.]+$/,'').replace(/[._-]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();return files.find(x=>x.type==='subtitle'&&stem(x.name)===stem(video.name))||null}
+
+/* ============ FILES ============ */
+async function scanFiles(say_){const l=await api('/api/scan');files=l;if(say_)await say(`explorer --scan: ${l.filter(f=>f.type!=='subtitle').length} media · ${l.filter(f=>f.type==='subtitle').length} subtitles`,l.length?'ok':'err');if(!l.length&&say_)await say('0 files: media permission do ya phone me media nahi mila','dim');renderFiles();renderHome();return l}
+function renderHome(){
+  $('#home-count').textContent=files.length+' indexed items';
+  const recent=Object.keys(W).filter(id=>byId(id)&&(W[id].n||W[id].pos>0)).sort((a,b)=>(W[b].last||0)-(W[a].last||0)).slice(0,3);
+  const target=recent[0]||queue.map(id=>byId(id)?id:null).find(Boolean)||files[0]?.id;
+  $('#home-resume').disabled=!target;$('#home-resume').textContent=target?(W[target]&&!W[target].done?'Resume':'Start listening'):'No media yet';
+  const panel=$('#home-continue');
+  if(!recent.length){panel.innerHTML='<div class="home-empty">Your playback history will appear here. Browse the library to get started.</div>';return}
+  panel.innerHTML=recent.map(id=>{const f=byId(id),w=W[id]||{};const pct=f&&f.dur?Math.max(0,Math.min(100,Math.round((w.pos||0)/f.dur*100))):0;return `<button class="row" data-home-play="${esc(id)}" style="width:100%;text-align:left;color:inherit"><div class="t">${esc(clean(f.name))}</div><div class="s">${pct}% watched · ${fmt(f.dur)}</div></button>`}).join('');
+  panel.querySelectorAll('[data-home-play]').forEach(b=>b.onclick=()=>play(b.dataset.homePlay,true));
+}
+async function refreshHome(){
+  await refreshInfo();$('#home-address').textContent=(info.ip||'—')+(info.port?':'+info.port:'');
+  const d=info.device||{};$('#home-device').textContent=`${d.brand||''} ${d.model||'browser'} · ${d.abi||'ABI n/a'} · ${d.cpus||'?'} cores`;
+  $('#home-network').textContent=info.ip&&info.ip!=='127.0.0.1'?(navigator.onLine?'LAN / hotspot · local-first':'Offline hotspot / LAN'):'No local network route';
+  let on=false;try{await fetch('/api/ping',{cache:'no-store'});on=true;$('#home-server').textContent='Online · port '+info.port}
+  catch(e){$('#home-server').textContent='Unavailable'}
+  const toggle=$('#home-server-toggle');toggle.hidden=!B;toggle.textContent=on?'Stop server':'Start server';
+  try{const c=await api('/api/clients');const tv=c.filter(x=>x.role==='tv');$('#home-receiver').textContent=tv.length?`${tv.length} browser receiver${tv.length===1?'':'s'} connected`:'No receiver connected'}catch(e){$('#home-receiver').textContent='Browser receiver · /tv'}
+}
+$('#home-browse').onclick=()=>tab('files');
+$('#mount-folder').onclick=()=>{if(B&&B.openFolderPicker)B.openFolderPicker();else say('Folder picker Android app ke andar available hai','err')};
+window.folderMounted=async()=>{await say('SAF folder grant saved — library rescan starting','ok');await scanFiles(true)};
+$('#explorer-now').onclick=()=>{if(cur)tab('player');else say('Explorer se pehle media select karein','dim')};
+$('#home-server-toggle').onclick=()=>{if(!B)return;if($('#home-server-toggle').textContent.startsWith('Stop')){B.stopServer();$('#home-server').textContent='Stopped';$('#home-server-toggle').textContent='Start server'}else{B.startServer();$('#home-server').textContent='Starting…';setTimeout(refreshHome,1200)}};
+$('#home-resume').onclick=()=>{const recent=Object.keys(W).filter(id=>byId(id)&&(W[id].n||W[id].pos>0)).sort((a,b)=>(W[b].last||0)-(W[a].last||0));const id=recent[0]||queue.find(x=>byId(x))||files[0]?.id;if(id)play(id,!!(W[id]&&!W[id].done));else tab('files')};
+const row=f=>{const w=W[f.id]||{};return`<div class="row ripple${f.id===cur?' now':''}" data-id="${f.id}"><div class="t">${esc(clean(f.name))}</div><div class="s">${f.type.toUpperCase()} | ${fmt(f.dur)} | ${(f.size/1048576).toFixed(0)} MB | ${w.n?'WATCHED '+w.n+'x':'UNWATCHED'}</div></div>`};
+function renderFiles(){const q=$('#fq').value.trim();let h='';
+  if(!q){const c=files.filter(f=>(W[f.id]||{}).pos>10&&!(W[f.id]||{}).done);if(c.length)h+='<h4>CONTINUE</h4>'+c.slice(0,5).map(row).join('')+'<h4>ALL</h4>'}
+  const l=(q?search(q):files.filter(f=>f.type!=='subtitle'));$('#fl').innerHTML=h+(l.length?l.map(row).join(''):'<div class="dim">no files. Terminal me <b>files --scan</b> chalao.</div>')}
+$('#fq').oninput=renderFiles;
+document.addEventListener('click',e=>{const r=e.target.closest('.row[data-id]');if(!r)return;const id=r.dataset.id;if(r.closest('#v-queue')){play(id);return}fileCard(id)});
+function fileCard(id){const f=byId(id);if(!f)return;card(esc(clean(f.name)),`<small>${f.type} | ${fmt(f.dur)} | ${(f.size/1048576).toFixed(1)} MB</small>`,[
+ ['PLAY',()=>play(id)],['CAST TO TV',()=>{setMode('tv');play(id)}],['PUSH TO QUEUE',()=>{addQ(id);say('queued: '+clean(f.name),'ok')}],['DELETE',()=>delCard(f),'red'],['CLOSE']])}
+function delCard(f){const c=card('PERMANENT DELETE',`<b>${esc(f.name)}</b><br>File device se hamesha ke liye hat jayegi.`,[['WAIT 3s…',async()=>{const r=await api('/api/delete?id='+f.id,{method:'POST'});say(r.ok?'deleted: '+f.name:'delete failed','err');if(r.ok){files=files.filter(x=>x.id!==f.id);queue=queue.filter(x=>x!==f.id);saveQ();renderFiles()}}],['CANCEL']]);
+  const b=c.el.querySelector('.btn');b.disabled=true;let n=3;const t=setInterval(()=>{n--;if(n<=0){clearInterval(t);b.disabled=false;b.textContent='DELETE FOREVER';b.classList.add('red')}else b.textContent='WAIT '+n+'s…'},1000)}
+
+/* ============ QUEUE (series folders) ============ */
+const saveQ=()=>SV('tc_queue',queue);
+function addQ(id){if(!queue.includes(id)){queue.push(id);saveQ()}}
+function order(){const g={},solo=[];queue.map(byId).filter(Boolean).forEach(f=>{const e=parseEp(f.name);if(e&&S.series){(g[e.key]=g[e.key]||{name:e.series,eps:[]}).eps.push({f,e})}else solo.push(f)});
+  Object.values(g).forEach(x=>x.eps.sort((a,b)=>a.e.s-b.e.s||a.e.e-b.e.e));return{g:Object.values(g),solo}}
+const flat=()=>{const o=order();return o.g.flatMap(x=>x.eps.map(y=>y.f)).concat(o.solo)};
+function renderQueue(){const o=order();let h='';
+  o.g.forEach(x=>{h+=`<details><summary>📁 ${esc(x.name)} <span class="dim">(${x.eps.length} eps)</span></summary>${x.eps.map(y=>row(y.f).replace('class="row','class="row').replace('</div></div>',`</div></div>`)).join('')}</details>`});
+  h+=o.solo.map(row).join('');$('#ql').innerHTML=h||'<div class="dim">queue empty. Explorer se file chunein aur add-to-queue karein.</div>';
+  const l=flat(),idx=l.findIndex(f=>f.id===cur),next=l.length?l[(idx<0?0:(idx+1)%l.length)]:null;
+  $('#neural-count').textContent=String(queue.length);$('#neural-next').textContent=next?clean(next.name):'—';
+  const parsed=next&&parseEp(next.name);$('#neural-parse').textContent=parsed?`${parsed.series} · S${String(parsed.s).padStart(2,'0')}E${String(parsed.e).padStart(2,'0')}`:(next?'Standalone':'Idle');
+}
+$('#q-clear').onclick=()=>{queue=[];saveQ();renderQueue()};
+$('#q-preflight').onclick=async()=>{const l=flat(),idx=l.findIndex(f=>f.id===cur),f=l.length?l[(idx<0?0:(idx+1)%l.length)]:null;if(!f){$('#neural-preflight').textContent='Queue empty';say('Preflight skipped — queue empty','dim');return}$('#neural-next').textContent=clean(f.name);$('#neural-preflight').textContent='Range probe…';try{const r=await fetch(murl(f,true),{headers:{Range:'bytes=0-0'}});const b=await r.arrayBuffer();const ok=r.status===206&&b.byteLength===1;$('#neural-preflight').textContent=ok?'HTTP range ready':'HTTP '+r.status+' · unavailable';say(`Preflight ${ok?'ready':'failed'} · ${clean(f.name)}`,ok?'ok':'err')}catch(e){$('#neural-preflight').textContent='Network error';say('Preflight failed: '+e.message,'err')}};
+function step(d){const l=flat();if(!l.length)return;const i=l.findIndex(f=>f.id===cur);const n=l[(i+d+l.length)%l.length];if(i+d>=l.length&&d>0&&!$('#auto').checked)return;play(n.id)}
+
+/* ============ PLAYER ============ */
+const pv=$('#pv');
+function setMode(m){mode=m;SV('tc_mode',m);$$('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===m))}
+$$('[data-m]').forEach(b=>b.onclick=()=>{setMode(b.dataset.m);if(cur)play(cur,true)});setMode(mode);
+const murl=(f,rel)=>(rel?location.origin:`http://${info.ip}:${info.port}`)+'/m/'+f.id+'/'+encodeURIComponent(f.name);
+const loadMsg=(f,start)=>({c:'load',url:murl(f),type:f.type,title:clean(f.name),subtitle:(()=>{const s=subtitleFor(f);return s?{url:`http://${info.ip}:${info.port}/sub/${s.id}`,label:s.name}:null})(),skips:SK[f.id]||[],intro:intro.enabled&&intro.start!=null&&intro.end>intro.start?{start:intro.start,end:intro.end}:null,mute:mode==='split',start,id:f.id});
+const pushBrand=()=>send({c:'brand',cfg:{name:S.bname,sub:S.bsub,style:S.bstyle,secs:S.bsecs}});
+function local(f,start){pv.querySelectorAll('track[data-auto-sub]').forEach(t=>t.remove());const sub=subtitleFor(f);if(sub){const tr=document.createElement('track');tr.kind='subtitles';tr.label='Auto: '+sub.name;tr.srclang='en';tr.src=location.origin+'/sub/'+sub.id;tr.default=true;tr.dataset.autoSub='1';pv.appendChild(tr);say('Auto subtitle matched: '+sub.name,'ok')}pv.src=murl(f,true);pv.muted=mode==='dual';pv.onloadedmetadata=()=>{if(start)pv.currentTime=start};pv.play().catch(()=>{})}
+async function play(id,keep,force){const f=byId(id);if(!f)return;cur=id;const w=W[id]=W[id]||{n:0};const start=(!keep&&w.pos>10&&!w.done)||keep?(w.pos||0):0;if(!keep)w.n=(w.n||0)+1;w.done=false;w.last=Date.now();SV('tc_watch',W);renderHome();
+  await refreshInfo();
+  if(partyRoom&&!partyApplying)partySend({kind:'load',name:clean(f.name),pos:start,at:Date.now()+500});
+  if(mode==='dlna'){
+    if(!activeDlna){pv.pause();tab('player');renderPlayer();dlnaPicker();return}
+    const j=await api('/api/dlna/play?renderer='+encodeURIComponent(activeDlna)+'&media='+encodeURIComponent(f.id),{method:'POST'});
+    if(!j.ok){dlnaPaused=true;await say('DLNA load failed: TV ne media/codec reject kiya','err')}else{dlnaPaused=false;tvState=null}
+  }else{
+    if(mode==='phone'||mode==='dual'||mode==='split')local(f,start);else pv.pause();
+    if(mode!=='phone'){if(S.proto||force)protoCard(f,start);else{await pushBrand();send(loadMsg(f,start))}}
+  }
+  tab('player');renderPlayer()}
+function renderPlayer(){const f=byId(cur),title=f?clean(f.name):'— nothing playing —';$('#np').textContent=title;$('#player-title').textContent=title;$('#stage-status').textContent=f?(mode.toUpperCase()+' · '+(activeDlna?'RENDERER CONNECTED':'LOCAL PLAYER')):'LOCAL PLAYER · READY';$('#player-stage').classList.toggle('empty',!f);$$('[data-m]').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
+  $('#sk-l').innerHTML=(SK[cur]||[]).map((r,i)=>`<span class="chip">${fmt(r.from*1000)}→${fmt(r.to*1000)} <a data-del="${i}" style="color:var(--c)">✕</a></span>`).join('')}
+const BOOK=LS('tc_bookmarks',{}),FAV=new Set(LS('tc_favorites',[]));let sleepHandle=0,abA=null,abB=null,subtitleOn=true;
+function markAB(){if(mode==='dlna'){say('A-B loop is unavailable for this DLNA renderer','err');return}if(abA===null||abB!==null){abA=playbackTime();abB=null;$('#ab-label').textContent='A '+fmt(abA*1000);say('A-B point A set','ok')}else{const t=playbackTime();if(t<=abA){say('Point B ko A se aage set karein','err');return}abB=t;$('#ab-label').textContent='Loop '+fmt(abA*1000)+'–'+fmt(abB*1000);say('A-B loop active','ok');if(mode==='tv'||mode==='dual'||mode==='split')send({c:'ab',a:abA,b:abB})}$('#player-ab').classList.toggle('active',abB!==null)}
+$('#player-ab').onclick=markAB;
+$('#player-night').onclick=()=>{$('#player-stage').classList.toggle('night');$('#player-night').classList.toggle('active');say('Night tint '+($('#player-stage').classList.contains('night')?'on':'off'),'dim')};
+$('#player-mirror').onclick=()=>{$('#player-stage').classList.toggle('mirror');$('#player-mirror').classList.toggle('active');say('Video mirror '+($('#player-stage').classList.contains('mirror')?'on':'off'),'dim')};
+$('#player-cast').onclick=()=>castingMethods();$('#player-back').onclick=()=>tab('term');$('#player-full').onclick=$('#player-stage-full').onclick=()=>$('#theater-toggle').click();
+$('#player-sub').onclick=()=>{if(mode==='dlna'){say('Subtitle selection DLNA renderer se control nahi hoti','err');return}const tracks=pv.textTracks;if(!tracks||!tracks.length){say('Matching subtitle nahi mili; SAF folder mein same-basename SRT/VTT mount karein','dim');return}subtitleOn=!subtitleOn;for(let i=0;i<tracks.length;i++)tracks[i].mode=subtitleOn?'showing':'disabled';$('#player-sub').classList.toggle('active',subtitleOn);if(mode==='tv'||mode==='dual'||mode==='split')send({c:'subtitle',enabled:subtitleOn});say('Subtitles '+(subtitleOn?'on':'off'),'ok')};
+$('#c-pp').onclick=()=>ctl(isPaused()?'play':'pause');
+pv.addEventListener('play',()=>{$('#c-pp').textContent='Ⅱ'});pv.addEventListener('pause',()=>{$('#c-pp').textContent='▶'});
+$('#player-bookmark').onclick=()=>{if(!cur){say('Pehle media select karein','err');return}BOOK[cur]=BOOK[cur]||[];BOOK[cur].push({pos:playbackTime(),at:Date.now()});SV('tc_bookmarks',BOOK);say('Bookmark saved at '+fmt(playbackTime()*1000),'ok')};
+$('#player-timer').onclick=()=>{const c=card('SLEEP TIMER','<p>Timer complete hone par active local ya remote playback pause hoga.</p><input class="field" id="sleep-min" type="number" min="1" max="240" value="30" inputmode="numeric">',[['START TIMER',el=>{const m=Math.max(1,Math.min(240,+el.querySelector('#sleep-min').value||30));clearTimeout(sleepHandle);sleepHandle=setTimeout(()=>{ctl('pause');say('Sleep timer complete · playback paused','ok')},m*60000);say('Sleep timer set · '+m+' minutes','ok')}],['CANCEL TIMER',()=>{clearTimeout(sleepHandle);sleepHandle=0;say('Sleep timer cancelled','dim')}],['CLOSE']]);};
+$('#player-menu').onclick=()=>{const f=byId(cur);if(!f){say('Pehle Explorer se media choose karein','dim');return}const fav=FAV.has(cur),marks=BOOK[cur]||[];card('PLAYER TOOLS',`<p>${esc(clean(f.name))}</p><small>${marks.length} bookmark(s) · ${fav?'favorite':'not favorite'}</small>`,[['CAST',el=>{closeCardEl(el);return castingMethods()}],['SAVE BOOKMARK',()=>$('#player-bookmark').click()],...(marks.length?[['RESUME BOOKMARK',()=>ctl('seek',marks[marks.length-1].pos)]]:[]),[fav?'REMOVE FAVORITE':'ADD FAVORITE',()=>{if(FAV.has(cur))FAV.delete(cur);else FAV.add(cur);SV('tc_favorites',[...FAV]);say(FAV.has(cur)?'Added to favorites':'Removed from favorites','ok')}],['DELETE MEDIA',el=>{closeCardEl(el);return delCard(f)}],['CLOSE']])};
+function ctl(c,v){if(partyRoom&&!partyApplying)partySend({kind:'control',c,v,at:Date.now()+350});if(mode==='dlna'&&activeDlna){let action=c==='pp'? (dlnaPaused?'play':'pause'):c==='rel'?'rel':c==='seek'?'seek':c==='vol'?'volume':c;if(c==='seek')v=dlnaTime(v);if(c==='vol')v=Math.round(Math.max(0,Math.min(1,v))*100);api('/api/dlna/control?renderer='+encodeURIComponent(activeDlna)+'&action='+encodeURIComponent(action)+'&position='+encodeURIComponent(v),{method:'POST'}).then(r=>{if(!r.ok)throw new Error('unsupported action');if(action==='play')dlnaPaused=false;if(action==='pause')dlnaPaused=true}).catch(()=>say('TV ne yeh DLNA control support nahi kiya','err'));return}if(mode==='phone'){if(c==='play')pv.play();else if(c==='pause')pv.pause();else if(c==='rel')pv.currentTime+=v;else if(c==='seek')pv.currentTime=v;else if(c==='vol')pv.volume=Math.min(1,v)}else{send({c,v:String(v)});if(mode==='dual'||mode==='split'){if(c==='pause')pv.pause();if(c==='play')pv.play();if(c==='seek')pv.currentTime=v;if(c==='rel')pv.currentTime+=v;if(c==='vol')pv.volume=Math.min(1,v)}}}
+const dlnaTime=s=>{s=Math.max(0,Math.floor(+s||0));return String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const isPaused=()=>mode==='phone'?pv.paused:mode==='dlna'?dlnaPaused:(tvState?tvState.paused:true);
+$('#c-pp').onclick=()=>ctl(isPaused()?'play':'pause');$('#c-b10').onclick=()=>ctl('rel',-10);$('#c-f10').onclick=()=>ctl('rel',10);$('#c-next').onclick=()=>step(1);$('#c-prev').onclick=()=>step(-1);
+const frameStep=dir=>{if(mode==='phone'||mode==='split'||mode==='dual'){pv.pause();pv.currentTime=Math.max(0,(pv.currentTime||0)+dir/25)}else ctl('rel',dir/25)};
+$('#c-frame-back').onclick=()=>frameStep(-1);$('#c-frame-next').onclick=()=>frameStep(1);
+let playerBrightness=1,touchGesture=null,lastTap=0,lastTapSide=0;
+pv.addEventListener('touchstart',e=>{if(!e.touches.length)return;const t=e.touches[0];touchGesture={x:t.clientX,y:t.clientY,fingers:e.touches.length,time:Date.now()}},{passive:true});
+pv.addEventListener('touchend',e=>{const g=touchGesture;if(!g||!e.changedTouches.length)return;const t=e.changedTouches[0],dy=t.clientY-g.y,dx=t.clientX-g.x,side=g.x<innerWidth/2?-1:1;touchGesture=null;
+  if(g.fingers>=2&&dy<-55){e.preventDefault();castingMethods();return}
+  if(Math.abs(dy)>48&&Math.abs(dx)<100){e.preventDefault();if(side<0){playerBrightness=Math.max(.35,Math.min(1.5,playerBrightness-dy/260));pv.style.filter=`brightness(${playerBrightness})`;say('Video brightness '+Math.round(playerBrightness*100)+'%','dim')}else{const r=$('#vol');r.value=Math.max(0,Math.min(200,+r.value-dy/3));$('#vl').textContent=r.value+'%';ctl('vol',r.value/100)}return}
+  if(Date.now()-lastTap<300&&side===lastTapSide){e.preventDefault();ctl('rel',side<0?-10:10);lastTap=0}else{lastTap=Date.now();lastTapSide=side}
+},{passive:false});
+$('#vol').oninput=e=>{$('#vl').textContent=e.target.value+'%';ctl('vol',e.target.value/100)};
+$('#seek').onchange=e=>{const d=mode==='phone'?pv.duration:(tvState||{}).dur;if(d)ctl('seek',e.target.value/1000*d)};
+const playbackTime=()=>mode==='phone'||mode==='split'||mode==='dual'?pv.currentTime||0:(tvState||{}).pos||0;
+function persistIntro(){SV('tc_intro',intro);$('#intro-start').textContent=intro.start==null?'Set intro start':'Start '+fmt(intro.start*1000);$('#intro-end').textContent=intro.end==null?'Set intro end':'End '+fmt(intro.end*1000);$('#intro-toggle').textContent=intro.enabled?'Intro skip on':'Intro skip off'}
+$('#intro-start').onclick=()=>{intro.start=playbackTime();if(intro.end!=null&&intro.end<=intro.start)intro.end=null;persistIntro();say('Intro start set at '+fmt(intro.start*1000),'ok')};
+$('#intro-end').onclick=()=>{const end=playbackTime();if(intro.start==null||end<=intro.start){say('Intro end ko start ke baad mark karein','err');return}intro.end=end;persistIntro();say('Intro end set at '+fmt(end*1000),'ok')};
+$('#intro-toggle').onclick=()=>{if(intro.start==null||intro.end==null||intro.end<=intro.start){say('Pehle intro start aur end mark karein','err');return}intro.enabled=!intro.enabled;persistIntro();if(mode==='tv'||mode==='dual'||mode==='split')send({c:'intro',intro:intro.enabled?{start:intro.start,end:intro.end}:null});say('Binge intro skip '+(intro.enabled?'enabled':'disabled'),'ok')};persistIntro();
+$('#theater-toggle').onclick=()=>{document.body.classList.toggle('theater');$('#theater-toggle').textContent=document.body.classList.contains('theater')?'Exit theater':'Theater mode'};
+const tt=s=>fmt((s||0)*1000);
+function ui(pos,dur){if(!document.activeElement||document.activeElement.id!=='seek')$('#seek').value=dur?pos/dur*1000:0;$('#tm').textContent=tt(pos)+' / '+tt(dur)}
+function savePos(pos,dur){const w=W[cur];if(!w)return;w.pos=pos;if(dur&&pos>dur-15)w.done=true;SV('tc_watch',W)}
+let lastSave=0;
+pv.ontimeupdate=()=>{if(mode==='tv'||mode==='dlna')return;ui(pv.currentTime,pv.duration);if(Date.now()-lastSave>4000){lastSave=Date.now();savePos(pv.currentTime,pv.duration)}
+  if(intro.enabled&&intro.start!=null&&intro.end>intro.start&&pv.currentTime>=intro.start&&pv.currentTime<intro.end&&!pv._introSkip){pv._introSkip=1;pv.style.opacity='0';setTimeout(()=>{pv.currentTime=intro.end;pv.style.opacity='1';pv._introSkip=0},100);return}
+  if(abA!==null&&abB!==null&&pv.currentTime>=abB){pv.currentTime=abA;return}
+  if(mode==='phone'||mode==='split'||mode==='dual')for(const r of SK[cur]||[])if(pv.currentTime>=r.from&&pv.currentTime<r.to&&!pv._sk){pv._sk=1;const ms=S.fade||400;pv.style.transition='filter '+ms/1000+'s';pv.style.filter='blur(14px) brightness(.3)';setTimeout(()=>{pv.currentTime=r.to;pv.style.filter='none';pv._sk=0},ms)}};
+pv.onended=()=>{if(mode!=='tv'&&mode!=='dlna'){savePos(pv.duration,pv.duration);if($('#auto').checked)step(1)}};
+const pt=s=>{s=String(s).trim();if(s.includes(':')){const p=s.split(':').map(Number);return p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1]}return +s};
+$('#sk-add').onclick=()=>{const f=pt($('#sk-f').value),t=pt($('#sk-t').value);if(!cur||!(t>f)){say('skip: pehle video play karo; to > from hona chahiye','err');return}(SK[cur]=SK[cur]||[]).push({from:f,to:t});SV('tc_skips',SK);$('#sk-f').value=$('#sk-t').value='';renderPlayer();if(mode!=='phone')send({c:'skips',skips:SK[cur]})};
+$('#sk-l').onclick=e=>{const i=e.target.dataset.del;if(i!==undefined){SK[cur].splice(i,1);SV('tc_skips',SK);renderPlayer();if(mode!=='phone')send({c:'skips',skips:SK[cur]})}};
+
+/* ============ LOCAL WATCH PARTY ============ */
+function partyStatus(){const el=$('#party-state');el.textContent=partyRoom?'ROOM '+partyRoom+' · SSE SYNC':'Party disconnected'}
+function partySend(payload){if(!partyRoom)return;const lag=Math.max(300,(parseFloat($('#lat').textContent)||0)*1.5);send(Object.assign({kind:'party',room:partyRoom,origin:clientId,at:Date.now()+lag},payload)).catch(e=>say('Party send failed: '+e.message,'err'))}
+$('#party-open').onclick=()=>{const c=card('LAN WATCH PARTY','<p>Sab viewers ko same TermiCast server par PIN pair karke matching local media select karna hoga. Room code sirf local event filter hai; sync transport HTTP + SSE use karta hai.</p><input class="field" id="party-code" maxlength="8" placeholder="6-character room code" value="'+esc(partyRoom)+'">',[['GENERATE',c=>{const code=Math.random().toString(36).slice(2,8).toUpperCase();c.querySelector('#party-code').value=code;return false}],['SYNC PARTY',c=>{const code=c.querySelector('#party-code').value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);if(code.length<4){say('Room code kam se kam 4 chars ka hona chahiye','err');return false}partyRoom=code;SV('tc_party',code);partyStatus();partySend({event:'hello'});say('Watch party joined: '+code,'ok');return true}],['LEAVE',()=>{partyRoom='';SV('tc_party','');partyStatus();say('Watch party left','dim')}],['CANCEL']]);};partyStatus();
+
+/* ============ LIVE: SSE + latency ============ */
+function sse(){const es=new EventSource('/events?role=ctl'+(TOKEN?'&k='+TOKEN:''));es.onmessage=e=>{const m=JSON.parse(e.data);
+  if(m.t==='clients')refreshHome();
+  if(m.t==='cmd'&&m.kind==='party'&&m.room===partyRoom&&m.origin!==clientId){
+    if(m.event==='hello'){say('Watch party member joined room '+partyRoom,'dim')}
+    if(m.event==='load'){const f=files.find(x=>clean(x.name).toLowerCase()===String(m.name||'').toLowerCase());if(!f){say('Party media missing locally: '+m.name,'err')}else{partyApplying=true;setMode('phone');play(f.id,false).then(()=>{pv.pause();pv.currentTime=Math.max(0,+m.pos||0);const wait=Math.max(0,(+m.at||Date.now())-Date.now());setTimeout(()=>{partyApplying=true;pv.play().catch(e=>say('Party resume failed: '+e.message,'err')).finally(()=>{partyApplying=false})},wait)}).finally(()=>{partyApplying=false})}}
+    if(m.event==='control'){const wait=Math.max(0,(+m.at||Date.now())-Date.now());setTimeout(()=>{partyApplying=true;setMode('phone');if(m.c==='seek')pv.currentTime=+m.v||0;else if(m.c==='rel')pv.currentTime=Math.max(0,pv.currentTime+(+m.v||0));else ctl(m.c,m.v);partyApplying=false},wait)}
+  }
+  if(m.t==='state'&&mode!=='phone'){tvState=m.d;ui(m.d.pos,m.d.dur);if(m.d.id===cur)$('#c-pp').textContent=m.d.paused?'▶':'Ⅱ';if(m.d.id===cur){if(Date.now()-lastSave>4000){lastSave=Date.now();savePos(m.d.pos,m.d.dur)}}
+    if(m.d.ended&&$('#auto').checked&&m.d.id===cur)step(1);
+    if(mode==='dual'&&Math.abs(pv.currentTime-m.d.pos)>.6)pv.currentTime=m.d.pos}};es.onerror=()=>{}}
+let dlnaPolling=false;
+setInterval(async()=>{const t=performance.now();try{await fetch('/api/ping');$('#lat').textContent=Math.round(performance.now()-t)}catch(e){$('#lat').textContent='–'}
+  if(mode==='dlna'&&activeDlna&&!dlnaPolling){dlnaPolling=true;try{const j=await api('/api/dlna/state?renderer='+encodeURIComponent(activeDlna));if(j.ok){tvState={pos:j.pos,dur:j.dur,paused:j.state!=='PLAYING'};dlnaPaused=tvState.paused;ui(j.pos,j.dur);if(Date.now()-lastSave>4000){lastSave=Date.now();savePos(j.pos,j.dur)}}}catch(e){}finally{dlnaPolling=false}}
+},2000);
+
+/* ============ SERVER INDICATOR + NEURAL_FIX ============ */
+async function refreshInfo(){try{info=await api('/api/info')}catch(e){}return info}
+let down=null;
+async function ping(){try{const r=await fetch('/api/ping',{cache:'no-store'});return await r.json()}catch(e){return null}}
+const tick=async()=>{const p=await ping(),s=$('#srv');if(p){await refreshInfo();s.className='on';s.querySelector('span').textContent=`SERVER ON ${info.ip}:${info.port}`;if(down){down.close();down=null;say('SYSTEM ACTIVE — server wapas aa gaya','ok')}}else{s.className='';s.querySelector('span').textContent='SERVER OFF';if(booted&&!down)neuralFix()}};tick();setInterval(tick,3000);
+function neuralFix(){const c=card('SYSTEM DEACTIVATED','<div id="nf" style="min-height:90px"></div>',[['RETRY NOW',()=>{fixStep();return false}]]);down=c;const log=t=>{const d=document.createElement('div');d.textContent='> '+t;c.el.querySelector('#nf').appendChild(d)};
+  c.log=log;fixStep=async()=>{log('NEURAL_FIX: net check '+(navigator.onLine?'ok':'offline'));if(B&&B.restartServer){log('service restart (bridge)');B.restartServer()}for(let i=1;i<=3;i++){await sleep(1500);log('ping retry '+i);if(await ping()){log('server UP ✓');return}}log('abhi bhi down — auto retry chalu')};fixStep()}
+let fixStep=()=>{};
+
+/* ============ HEADER CARDS ============ */
+async function castDlna(id,f){
+  if(!f)throw new Error('Pehle library se media scan/select karo');
+  const j=await api('/api/dlna/play?renderer='+encodeURIComponent(id)+'&media='+encodeURIComponent(f.id),{method:'POST'});
+  if(!j.ok)throw new Error('Renderer ne media load reject kiya; codec/format supported na ho sakta hai');
+  activeDlna=id;setMode('dlna');dlnaPaused=false;tvState=null;pv.pause();tab('player');renderPlayer();
+  say('DLNA playback request sent to renderer','ok');
+}
+function dlnaPicker(){
+  const c=card('DLNA RENDERERS','<div class="dim">SSDP local network scan · TV aur phone same LAN par hone chahiye.</div><div id="dlna-results" style="margin-top:12px">Scan karke available renderers dekhein.</div>',[
+    ['SCAN NETWORK',async c=>{const area=c.querySelector('#dlna-results');area.textContent='SSDP discovery chal rahi hai…';try{const list=await api('/api/dlna/scan');if(!list.length){area.innerHTML='<div class="home-empty">Koi AVTransport renderer nahi mila. TV settings mein DLNA/media renderer enable karein, aur router ka client isolation check karein.</div>';return false}area.innerHTML=list.map(r=>`<button class="row" data-dlna="${esc(r.id)}" style="display:block;width:100%;text-align:left;color:inherit"><div class="t">${esc(r.name)}</div><div class="s">UPnP AVTransport</div></button>`).join('');area.querySelectorAll('[data-dlna]').forEach(b=>b.onclick=async()=>{try{const id=b.dataset.dlna,f=byId(cur);if(f)await castDlna(id,f);else{activeDlna=id;setMode('dlna');tab('files');say('DLNA renderer selected — ab library se media chunein','ok')}c.close()}catch(e){area.insertAdjacentHTML('afterbegin','<div class="ln err">'+esc(e.message)+'</div>')}})}catch(e){area.textContent='Discovery failed: '+e.message}return false}],['CLOSE']]);
+  return c;
+}
+const radarState={records:[],filter:'ALL',timer:0,card:null};
+function renderRadarRows(){const host=radarState.card&&radarState.card.querySelector('#radar-content');if(!host)return;const list=radarState.records.filter(x=>radarState.filter==='ALL'||x.protocol===radarState.filter);host.innerHTML=`<div class="radar-protocol-head"><b>UNIFIED RADAR PROTOCOL</b><small>DISCOVERY PIPELINE · Wi‑Fi → Bluetooth → SSDP/UPnP → LAN</small><div class="radar-filters">${['ALL','WIFI','BT','DLNA','LAN'].map(k=>`<button class="radar-filter${radarState.filter===k?' on':''}" data-rfilter="${k}">${k}</button>`).join('')}</div></div>`+(list.length?list.map(d=>`<div class="radar-device"><span class="radar-dot ${d.protocol.toLowerCase()}"></span><div class="radar-meta"><small>${esc(d.protocol)} · ${esc(d.kind)}</small><b>${esc(d.name)}</b><span>${esc(d.address||'Address unavailable')} · ${esc(d.status)}</span></div>${d.action?`<button class="btn" data-raction="${esc(d.id)}">${esc(d.action)}</button>`:''}</div>`).join(''):'<div class="home-empty">Is protocol group mein abhi koi device report nahi hua.</div>');
+  host.querySelectorAll('[data-rfilter]').forEach(b=>b.onclick=()=>{radarState.filter=b.dataset.rfilter;renderRadarRows()});host.querySelectorAll('[data-raction]').forEach(b=>b.onclick=async()=>{const d=radarState.records.find(x=>x.id===b.dataset.raction);if(!d)return;if(d.protocol==='WIFI'){B&&B.openWifi();say('Android Wi‑Fi settings opened for network selection','dim')}else if(d.protocol==='BT'){if(B&&B.pairBluetooth(d.address))say((d.status==='PAIRED'?'Android Bluetooth settings opened for ':'Bluetooth pairing requested for ')+d.name,'ok');else say('Bluetooth permission ya device unavailable','err')}else if(d.protocol==='DLNA'){const f=byId(cur)||files.find(x=>x.type!=='subtitle');if(!f){activeDlna=d.id;setMode('dlna');tab('files');say('Renderer selected · Explorer se media choose karein','ok');closeCardEl(radarState.card)}else try{await castDlna(d.id,f);closeCardEl(radarState.card)}catch(e){say('DLNA cast error: '+e.message,'err')}}});
+}
+async function renderRadar(c){radarState.card=c;radarState.records=[];radarState.filter='ALL';const host=c.querySelector('#radar-content');host.innerHTML='<div class="ps run"><span class="st">◌</span>RADAR_BOOT<em>Permission and protocol checks…</em></div>';await say('RADAR/BOOT · unified discovery protocol started','dim');
+  let radio={wifi:[],bluetooth:[]};if(B){if(!B.hasPerm('radio')&&!await permCard('radio','Nearby Wi‑Fi scan aur Bluetooth discovery ke liye Android radio/location permissions chahiye.')){say('RADAR/PERMISSION · radio scan declined','err')}else{B.startRadioScan();await sleep(1700);try{radio=JSON.parse(B.radioSnapshot())}catch(e){radio={wifi:[],bluetooth:[]}}}}
+  const [renderers,clients]=await Promise.all([api('/api/dlna/scan').catch(()=>[]),api('/api/clients').catch(()=>[])]);let records=[];
+  (radio.wifi||[]).forEach((d,i)=>records.push({id:'wifi-'+i,protocol:'WIFI',kind:'ACCESS POINT',name:d.ssid||'Hidden network',address:d.bssid||`${d.frequency||'?'} MHz`,status:`${d.level} dBm`,action:'OPEN WIFI'}));
+  (radio.bluetooth||[]).forEach((d,i)=>records.push({id:'bt-'+i,protocol:'BT',kind:'BLUETOOTH',name:d.name||'Bluetooth device',address:d.address,status:d.paired?'PAIRED':'DISCOVERED',action:d.paired?'SETTINGS':'PAIR'}));
+  (renderers||[]).forEach(d=>records.push({id:d.id,protocol:'DLNA',kind:'UPnP AVTransport',name:d.name||'MediaRenderer',address:d.address,status:'RENDERER READY',action:'SELECT'}));
+  (clients||[]).forEach((d,i)=>records.push({id:'client-'+i,protocol:'LAN',kind:String(d.role||'CLIENT').toUpperCase(),name:'TermiCast receiver',address:d.ip,status:'CONNECTED',action:''}));
+  radarState.records=records;await say(`RADAR/SCAN · ${records.length} endpoint(s) normalized`,'ok');renderRadarRows();
+  // Bluetooth discovery continues asynchronously; refresh records without blocking the card.
+  clearInterval(radarState.timer);let tries=0;radarState.timer=setInterval(()=>{if(!radarState.card||!radarState.card.isConnected||++tries>8){clearInterval(radarState.timer);if(B&&B.stopRadioScan)B.stopRadioScan();return}try{const x=JSON.parse(B.radioSnapshot()),old=radarState.records.filter(d=>d.protocol!=='BT'),bt=(x.bluetooth||[]).map((d,i)=>({id:'bt-'+i,protocol:'BT',kind:'BLUETOOTH',name:d.name||'Bluetooth device',address:d.address,status:d.paired?'PAIRED':'DISCOVERED',action:d.paired?'SETTINGS':'PAIR'}));radarState.records=old.concat(bt);renderRadarRows()}catch(e){}},1200);
+}
+function closeCardEl(el){el.remove();if(!$('#layer').children.length)$('#layer').classList.remove('on')}
+$('#b-radar').onclick=()=>{card('DEVICE RADAR','<div class="dim">Nearby Wi‑Fi access points, Bluetooth pairing devices, DLNA renderers aur active TermiCast browser clients. Bluetooth audio routing Android system settings se hoti hai.</div><div id="radar-content" style="margin-top:10px">Tap SCAN to check nearby radios.</div>',[['SCAN RADIOS',async c=>{await renderRadar(c);return false}],['CLOSE',()=>{if(B&&B.stopRadioScan)B.stopRadioScan()}]]);};
+$('#b-man').onclick=()=>card('SYSTEM_MANUAL','<b>Commands</b><br>'+Object.keys(cmds).map(k=>`<code>${k}</code> ${esc(cmds[k].d)}`).join('<br>')+'<br><br><b>Files search</b>: <code>&gt;500mb &lt;200mb video audio watched unwatched &gt;20m &lt;10m series:naruto</code> + fuzzy text.<br><b>Player</b>: TV / MOBILE / DUAL, ±10s, volume boost (TV), timestamp skip with fade.<br><b>Remote</b>: dusre device par <code>http://IP:PORT/</code> kholo → PIN (Terminal → pin).',[['CLOSE']]);
+
+/* ============ SETTINGS (AI + cinema + protocol) ============ */
+const S=Object.assign({fade:400,fuzzy:true,tol:2,series:true,proto:true,auto:true,anim:true,bname:'CREATED BY HARSHIT',bsub:'>> CORE SYSTEM: ENGINEERED BY HARSHIT',bstyle:'glitch',bsecs:5},LS('tc_set',{}));
+function applyS(){document.documentElement.classList.toggle('noanim',!S.anim);$('#fade').value=S.fade;$('#auto').checked=S.auto;SV('tc_set',S)}
+applyS();$('#fade').oninput=e=>{S.fade=+e.target.value||400;SV('tc_set',S)};$('#auto').onchange=e=>{S.auto=e.target.checked;SV('tc_set',S)};
+const sw=(k,t,s)=>`<div class="set"><label>${t}<small>${s}</small></label><input type="checkbox" data-s="${k}"${S[k]?' checked':''}></div>`;
+const fld=(k,t,s,type,x)=>`<div class="set"><label>${t}<small>${s}</small></label><input class="field" data-s="${k}" type="${type||'text'}" value="${esc(S[k])}" ${x||''}></div>`;
+$('#b-set').onclick=()=>{const c=card('Settings',
+  '<h5>AI ENGINE</h5>'+sw('fuzzy','Fuzzy search','typo tolerant matching')+fld('tol','Typo tolerance','max letters, 0-3','number','min=0 max=3')+sw('series','Series organizer','auto folders in queue')+
+  '<h5>PROTOCOL</h5>'+sw('proto','Auto protocol on cast','link → receiver → stream → load, ek ek karke')+
+  '<h5>CINEMA</h5>'+sw('anim','Animations','fade + blur + glitch')+fld('fade','Skip fade (ms)','blur transition on skip','number')+sw('auto','Auto-next','agla episode khud chale')+
+  '<h5>TV BRANDING</h5>'+fld('bname','Title','')+fld('bsub','Subtitle','')+fld('bsecs','Seconds','overlay duration','number')+
+  `<div class="set"><label>Style</label><select class="field" data-s="bstyle">${['glitch','neon','cinema','typewriter','hologram'].map(x=>`<option${S.bstyle===x?' selected':''}>${x}</option>`).join('')}</select></div>`,
+  [['PUSH BRANDING TO TV',()=>{pushBrand();say('branding pushed to TV','ok');return false}],['CLOSE']]);
+  c.el.addEventListener('input',e=>{const k=e.target.dataset.s;if(!k)return;const t=e.target;let v=t.type==='checkbox'?t.checked:t.type==='number'?+t.value:t.value;if(k==='tol')v=Math.max(0,Math.min(3,v||0));if(k==='fade')v=v||400;S[k]=v;applyS()})};
+
+/* ============ CAST PROTOCOL (one step at a time) ============ */
+let abortP=false;
+function protoCard(f,start){abortP=false;
+  const c=card('Cast protocol',`<small>${esc(clean(f.name))}</small><div id="pl" style="margin-top:8px"></div>`,[['CANCEL',()=>{abortP=true}]]);
+  const L=c.el.querySelector('#pl');
+  const step=async(name,fn)=>{if(abortP)return false;const d=document.createElement('div');d.className='ps run';d.innerHTML=`<span class="st">◌</span>${name}<em>…</em>`;L.appendChild(d);
+    try{const r=await fn();d.className='ps ok';d.querySelector('.st').textContent='✓';d.querySelector('em').textContent=r}catch(e){d.className='ps bad';d.querySelector('.st').textContent='✗';d.querySelector('em').textContent=e.message;return false}return true};
+  (async()=>{
+    let ok=await step('1 · NET_LINK',async()=>{await refreshInfo();if(info.ip==='127.0.0.1')throw new Error('LAN IP nahi — Wi-Fi/hotspot on karo');return info.ip+':'+info.port});
+    ok=ok&&await step('2 · RECEIVER',async()=>{const t=(await api('/api/clients')).filter(x=>x.role==='tv');if(!t.length)throw new Error('TV par /tv nahi khula');return t.length+' on /tv'});
+    ok=ok&&await step('3 · STREAM',async()=>{const r=await fetch(murl(f,true),{headers:{Range:'bytes=0-1'}});if(r.status!==206)throw new Error('HTTP '+r.status);return '206 range ok'});
+    ok=ok&&await step('4 · LOAD',async()=>{tvState=null;await pushBrand();await send(loadMsg(f,start));for(let i=0;i<20;i++){await sleep(500);if(abortP)throw new Error('cancelled');if(tvState&&tvState.id===f.id&&!tvState.paused&&tvState.pos>.2)return 'TV playing'}throw new Error('TV play nahi hua (TV par OK dabao)')});
+    if(abortP){c.close();return}
+    if(ok){say('METHOD BROWSER ✓ — casting','ok');setTimeout(c.close,1300);return}
+    await step('5 · FALLBACK PHONE',async()=>{setMode('phone');local(f,start);return 'METHOD_FAIL → PHONE'});
+    say('METHOD_FAIL → NEXT: phone par chal raha hai','err');setTimeout(c.close,2200)
+  })();
+}
+const castMethods={
+  dlna:{title:'Auto-DLNA Discovery',details:'SSDP M-SEARCH local LAN par MediaRenderer dhoondhta hai. Renderer description se AVTransport control URL read hota hai; stream HTTP Range ke saath phone se milti hai. TV aur phone same LAN par hon, multicast allowed ho, aur TV requested codec decode kar sake.',auto:async()=>{
+    const p=card('AUTO-DLNA · CONNECTING','<div class="ps run"><span class="st">◌</span>SSDP DISCOVERY<em>Searching local network…</em></div><div id="auto-dlna-result" class="dim"></div>');
+    try{const list=await api('/api/dlna/scan');if(!list.length){p.el.querySelector('#auto-dlna-result').textContent='Koi renderer response nahi. Browser fallback manually use kar sakte hain.';say('DLNA discovery: no renderer found','err');return}
+      const r=list[0];p.el.querySelector('#auto-dlna-result').textContent='Renderer: '+r.name+' · '+r.address+(list.length>1?' · first available selected':'');say('DLNA renderer found: '+r.name+' ('+r.address+')','ok');
+      const f=byId(cur)||files[0];if(!f){activeDlna=r.id;setMode('dlna');p.el.querySelector('#auto-dlna-result').textContent+=' · renderer ready; Explorer se media select karein';return}
+      await castDlna(r.id,f);p.close();
+    }catch(e){p.el.querySelector('#auto-dlna-result').textContent='Connection error: '+e.message;say('DLNA connect failed: '+e.message,'err')}
+  },manual:manualDlna},
+  manual:{title:'Manual IP · Security Gateway',details:'TV ka IP enter karo. ALLOW dabane par app SSDP results ko us IP se match karega; matching AVTransport renderer hi select hoga. App arbitrary IP par SOAP control bhejne se pehle explicit approval leta hai.',auto:async()=>manualDlna(),manual:manualDlna},
+  browser:{title:'Browser Fallback · HTTP Range',details:'TV browser mein phone ka /tv receiver URL kholo. Browser receiver ko video/audio MIME aur HTTP byte ranges milte hain; TV browser codec support mandatory hai. Yeh DLNA control nahi hai.',auto:async()=>{const f=byId(cur)||files[0];if(!f){say('Pehle Explorer mein media select karein','err');tab('files');return}setMode('tv');play(f.id,false,true)},manual:async()=>{await refreshInfo();const url=`http://${info.ip}:${info.port}/tv`;const p=card('BROWSER FALLBACK · MANUAL',`<p>TV ke browser address bar mein yeh URL kholo:</p><input class="field" id="fallback-url" readonly value="${esc(url)}"><small>TV page ko foreground mein rakho; phir media select karke Browser TV mode mein Cast karo.</small>`,[['COPY URL',async c=>{const i=c.querySelector('#fallback-url');i.select();try{await navigator.clipboard.writeText(url)}catch(e){document.execCommand('copy')}say('TV receiver URL copied','ok');return false}],['CANCEL']]);}
+  }
+};
+function manualDlna(){const p=card('MANUAL IP · SECURITY GATEWAY','<p>TV ka IPv4 address enter karein. IP tab tak use nahi hoga jab tak aap ALLOW na dabayein.</p><input class="field" id="manual-tv-ip" inputmode="decimal" placeholder="192.168.1.20">',[
+  ['ALLOW',async c=>{const ip=c.querySelector('#manual-tv-ip').value.trim();if(!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(ip)||ip.split('.').some(x=>+x>255)){c.querySelector('.body').insertAdjacentHTML('beforeend','<div class="ln err">Valid IPv4 address enter karein.</div>');return false}const area=document.createElement('div');area.className='ln dim';area.textContent='Permission allowed · renderer check…';c.querySelector('.body').appendChild(area);try{const list=await api('/api/dlna/scan'),r=list.find(x=>x.address===ip);if(!r){area.textContent='Is IP par SSDP se AVTransport renderer nahi mila.';say('Manual renderer not found at '+ip,'err');return false}const f=byId(cur)||files[0];if(!f){activeDlna=r.id;setMode('dlna');area.textContent=r.name+' selected — Explorer se media choose karein';say('Manual renderer selected: '+r.name,'ok');return false}await castDlna(r.id,f);p.close()}catch(e){area.textContent='Connection failed: '+e.message}return false}],
+  ['DENY',()=>say('Manual renderer access denied','dim')],['CANCEL']]);}
+function methodDetail(key){const m=castMethods[key];const c=card(m.title,`<p>${esc(m.details)}</p><div class="method-note">Protocol status current app build ke hisaab se dikhaya gaya hai. Unsupported cast APIs ko auto-connect nahi kiya jayega.</div>`,[['AUTO CONNECT',async()=>{c.close();await m.auto()}],['MANUAL',async()=>{c.close();await m.manual()}],['CANCEL']]);return c}
+function castingMethods(){const html=Object.entries(castMethods).map(([id,m])=>`<div class="method-row"><div><b>${esc(m.title)}</b><small>${id==='dlna'?'SSDP · UPnP AVTransport':id==='manual'?'IP allow/deny gateway':'HTTP · local browser receiver'}</small></div><button class="ic method-info" data-info="${id}" aria-label="${esc(m.title)} instructions">i</button><button class="btn method-select" data-method="${id}">Select</button></div>`).join('')+'<div class="home-empty">Wi‑Fi Direct, Miracast aur Chromecast is build mein available nahi hain. Bluetooth pairing alag device/audio workflow hai.</div>';
+  const c=card('CASTING METHODS',html,[['CANCEL']]);c.el.querySelectorAll('[data-info]').forEach(b=>b.onclick=()=>methodDetail(b.dataset.info));c.el.querySelectorAll('[data-method]').forEach(b=>b.onclick=()=>methodDetail(b.dataset.method));return c}
+$('#b-hub').onclick=castingMethods;
+
+/* ============ BOOT ============ */
+async function waitPerm(k,ms){const t=Date.now();while(Date.now()-t<ms){if(B.hasPerm(k))return true;await sleep(300)}return false}
+function permCard(k,why){return new Promise(r=>card('PERMISSION: '+k,`${why}<br><small>Iske bina app kaam nahi karega.</small>`,[['ACCEPT',async()=>{B.requestPerm(k);r(await waitPerm(k,10000))}],['CANCEL',()=>r(false)]]))}
+async function boot(){
+  await say('SYSTEM ACTIVATING…','dim');const p=await ping();
+  if(!p){booted=true;neuralFix();return}
+  if(!p.local&&!TOKEN)await pairCard();
+  await refreshInfo();
+  if(B){const perms=[['media','videos/music dhoondhne ke liye'],['notifications','server status notification ke liye']],lines=[];
+    for(const [k,why] of perms){lines.push(await say(`sys_init --grant ${k}  # ${why}`,'perm'));if(!B.hasPerm(k)){B.requestPerm(k);if(!await waitPerm(k,5000)&&!await permCard(k,why)){$('nav').classList.add('lock');await say(`HALT: permission '${k}' denied. App reopen karke dobara try karo.`,'err');return}}}
+    lines.forEach(l=>l.classList.add('gone'));await sleep(700);lines.forEach(l=>l.remove())}
+  await say('SYSTEM ACTIVE','ok');const d=info.device||{};
+  await say(`device : ${d.brand||''} ${d.model||'browser'} | Android ${d.android||'-'}`);
+  await say(`screen : ${screen.width}x${screen.height} | cores ${navigator.hardwareConcurrency||'?'}`);
+  await say(`server : stream_daemon [ACTIVE] ${info.ip}:${info.port}`,'ok');
+  await say(`TV     : open http://${info.ip}:${info.port}/tv on your TV browser`);
+  booted=true;sse();const l=await scanFiles(true);await refreshHome();renderQueue();await say("type 'help' for commands",'dim');if(!LS('tc_method_prompted',false)){SV('tc_method_prompted',true);castingMethods()}}
+boot();
+</script>
+</body>
+</html>

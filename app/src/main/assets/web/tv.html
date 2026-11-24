@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TermiCast TV</title>
+<style>
+/* ===== THEME (edit me) ===== */
+:root{--a:#37A6FF;--b:#8CD7FF;--c:#FF5577}
+html,body{margin:0;height:100%;background:#000;color:#fff;font-family:'SF Pro Display','Helvetica Neue',Inter,system-ui,sans-serif;font-weight:300;overflow:hidden}
+video{position:fixed;inset:0;width:100%;height:100%;object-fit:contain;background:#000;transition:filter 1s}
+/* ===== BRANDING (CREATED BY HARSHIT) ===== */
+#brand{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .8s;text-align:center}
+#brand.on{opacity:1}
+#brand .n{font-size:6vw;font-weight:200;letter-spacing:.5vw}
+#brand .s{font-size:2vw;margin-top:1.5vw;color:var(--a)}
+#brand.glitch .n{animation:gl .5s steps(2) infinite;text-shadow:3px 0 var(--a),-3px 0 rgba(255,255,255,.5)}
+#brand.neon .n{color:#fff;text-shadow:0 0 10px var(--a),0 0 30px var(--a),0 0 60px var(--b)}
+#brand.cinema .n{font-weight:300;letter-spacing:1.2vw;font-family:Georgia,serif}
+#brand.holo .n{background:linear-gradient(90deg,var(--a),var(--b),var(--a));-webkit-background-clip:text;color:transparent;animation:sh 2s linear infinite;background-size:200%}
+@keyframes gl{0%{transform:translate(0)}25%{transform:translate(-6px,2px)}50%{transform:translate(5px,-3px)}75%{transform:translate(-3px,-2px)}}
+@keyframes sh{to{background-position:200%}}
+/* ===== AUDIO PLAYER (LAYOUT) ===== */
+#au{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#2a1408,#050505)}
+#au.on{display:flex}
+#disc{width:26vmin;height:26vmin;border-radius:50%;background:repeating-radial-gradient(#111 0 2px,#1d1d1d 3px 4px);border:2px solid var(--a);box-shadow:0 0 40px var(--b);animation:spin 4s linear infinite;animation-play-state:paused;display:flex;align-items:center;justify-content:center}
+#disc.play{animation-play-state:running}
+#disc i{width:8vmin;height:8vmin;border-radius:50%;background:var(--a)}
+@keyframes spin{to{transform:rotate(360deg)}}
+#at{font-size:4vmin;margin-top:3vmin}#aa{color:var(--a);font-size:2.6vmin}
+#cv{width:70vw;height:14vmin;margin-top:3vmin}
+#pb{width:60vw;height:.8vmin;background:#333;margin-top:2vmin;border-radius:4px}#pb i{display:block;height:100%;width:0;background:var(--a);border-radius:4px}
+#ab{position:absolute;bottom:3vmin;color:var(--dim,#7a8);font-size:1.8vmin}
+/* ===== MISC ===== */
+#wait{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:2.2vw;color:var(--a)}
+#wait small{color:#789;font-size:1.3vw;margin-top:1vw}
+#tap{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);font-size:3vw;color:var(--a)}
+</style>
+</head>
+<body>
+<video id="v" playsinline></video>
+<div id="au"><div id="disc"><i></i></div><div id="at">–</div><div id="aa">–</div><canvas id="cv" width="700" height="140"></canvas><div id="pb"><i></i></div><div id="ab">CREATED BY HARSHIT · core system: engineered by Harshit</div></div>
+<div id="brand" class="glitch"><div class="n">CREATED BY HARSHIT</div><div class="s">&gt;&gt; CORE SYSTEM: ENGINEERED BY HARSHIT</div></div>
+<div id="wait">TERMICAST RECEIVER<small id="ws">waiting for cast… (controller se video bhejo)</small></div>
+<div id="tap">▶ PRESS OK / TAP TO START</div>
+<script>
+/* ===== LOGIC ===== */
+const $=id=>document.getElementById(id),v=$('v');
+const q=new URLSearchParams(location.search);
+let CFG={name:q.get('name')||'CREATED BY HARSHIT',sub:q.get('sub')||'>> CORE SYSTEM: ENGINEERED BY HARSHIT',style:q.get('style')||'glitch',secs:+(q.get('secs')||5),blur:12,dark:.35};
+try{Object.assign(CFG,JSON.parse(localStorage.tc_brand||'{}'))}catch(e){}
+let cur={},skips=[],intro=null,abLoop=null,branded=false,skipBusy=false,introBusy=false,ctx,gain,an,src;
+
+function brand(){
+  const b=$('brand');b.className=CFG.style==='neon'?'neon':CFG.style==='cinema'?'cinema':CFG.style==='hologram'?'holo':'glitch';
+  b.querySelector('.n').textContent='';b.querySelector('.s').textContent=CFG.sub;
+  v.style.filter=`blur(${CFG.blur}px) brightness(${CFG.dark})`;b.classList.add('on');
+  if(CFG.style==='typewriter'){let i=0;const n=b.querySelector('.n'),t=setInterval(()=>{n.textContent=CFG.name.slice(0,++i);if(i>=CFG.name.length)clearInterval(t)},70)}else b.querySelector('.n').textContent=CFG.name;
+  setTimeout(()=>{b.classList.remove('on');v.style.filter='none'},CFG.secs*1000);
+}
+function audioGraph(){if(ctx)return;try{ctx=new (window.AudioContext||window.webkitAudioContext)();src=ctx.createMediaElementSource(v);gain=ctx.createGain();an=ctx.createAnalyser();an.fftSize=128;src.connect(gain);gain.connect(an);an.connect(ctx.destination)}catch(e){ctx=null}}
+function load(m){
+  cur=m;skips=m.skips||[];intro=m.intro||null;branded=false;$('wait').style.display='none';
+  const isA=m.type==='audio';$('au').classList.toggle('on',isA);
+  if(isA){const t=(m.title||'').split(' - ');$('aa').textContent=t.length>1?t[0]:'Unknown artist';$('at').textContent=t.length>1?t.slice(1).join(' - '):m.title;audioGraph()}
+  v.style.filter='none';v.muted=!!m.mute;v.querySelectorAll('track[data-auto-sub]').forEach(t=>t.remove());if(m.subtitle&&m.subtitle.url){const tr=document.createElement('track');tr.kind='subtitles';tr.label=m.subtitle.label||'Subtitle';tr.srclang='en';tr.src=m.subtitle.url;tr.default=true;tr.dataset.autoSub='1';v.appendChild(tr)}v.src=m.url;
+  v.onloadedmetadata=()=>{if(m.start>5)v.currentTime=m.start};
+  go();
+}
+function go(){const p=v.play();if(p&&p.catch)p.catch(()=>{$('tap').style.display='flex'})}
+function unlock(){$('tap').style.display='none';if(ctx&&ctx.state==='suspended')ctx.resume();go()}
+$('tap').onclick=unlock;
+v.addEventListener('playing',()=>{$('disc').classList.add('play');if(!branded&&cur.type!=='audio'){branded=true;brand()}else if(!branded){branded=true}});
+v.addEventListener('pause',()=>$('disc').classList.remove('play'));
+v.addEventListener('ended',()=>post(true));
+v.addEventListener('timeupdate',()=>{
+  const t=v.currentTime;$('pb').firstChild.style.width=(v.duration?t/v.duration*100:0)+'%';
+  if(abLoop&&t>=abLoop.b){v.currentTime=abLoop.a;return}
+  if(intro&&t>=intro.start&&t<intro.end&&!introBusy){introBusy=true;v.style.opacity='0';setTimeout(()=>{v.currentTime=intro.end;v.style.opacity='1';introBusy=false},100);return}
+  for(const r of skips)if(t>=r.from&&t<r.to&&!skipBusy){skipBusy=true;v.style.transition='filter .4s';v.style.filter='blur(14px) brightness(.3)';setTimeout(()=>{v.currentTime=r.to;v.style.filter='none';skipBusy=false},400)}
+});
+function run(m){switch(m.c){
+  case'load':load(m);break;
+  case'play':unlock();break;
+  case'pause':v.pause();break;
+  case'seek':v.currentTime=+m.v;break;
+  case'rel':v.currentTime=Math.max(0,v.currentTime+(+m.v));break;
+  case'vol':{const x=+m.v;if(x>1){audioGraph();if(gain)gain.gain.value=x;v.volume=1}else{if(gain)gain.gain.value=1;v.volume=Math.max(0,x)}break}
+  case'skips':skips=m.skips||[];break;
+  case'intro':intro=m.intro||null;break;
+  case'ab':abLoop=m.a!=null&&m.b>m.a?{a:+m.a,b:+m.b}:null;break;
+  case'subtitle':if(v.textTracks&&v.textTracks.length)for(let i=0;i<v.textTracks.length;i++)v.textTracks[i].mode=m.enabled?'showing':'disabled';break;
+  case'brand':Object.assign(CFG,m.cfg||{});try{localStorage.tc_brand=JSON.stringify(CFG)}catch(e){}break}}
+function post(ended){if(!cur.url)return;fetch('/api/state',{method:'POST',body:JSON.stringify({id:cur.id,pos:v.currentTime||0,dur:v.duration||0,paused:v.paused,ended:!!ended})}).catch(()=>{})}
+setInterval(()=>post(false),500);
+/* SSE control channel (auto-reconnect is built in) */
+const es=new EventSource('/events?role=tv');
+es.onopen=()=>{$('ws').textContent='connected ✓ — waiting for cast…'};
+es.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.t==='cmd')run(m)}catch(x){}};
+es.onerror=()=>{$('ws').textContent='server nahi mil raha… reconnecting'};
+/* TV remote keys */
+document.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){v.paused?unlock():v.pause()}else if(e.key==='ArrowRight')v.currentTime+=10;else if(e.key==='ArrowLeft')v.currentTime-=10});
+/* FFT visualizer */
+const cv=$('cv'),g=cv.getContext('2d');
+(function draw(){requestAnimationFrame(draw);if(!$('au').classList.contains('on'))return;g.clearRect(0,0,700,140);
+  const n=32,d=new Uint8Array(an?an.frequencyBinCount:n);if(an&&ctx&&ctx.state==='running')an.getByteFrequencyData(d);
+  for(let i=0;i<n;i++){const val=an&&ctx&&ctx.state==='running'?d[i]/255:(v.paused?0:.3+.3*Math.abs(Math.sin(Date.now()/250+i)));g.fillStyle=i%2?'#FF6A24':'#FFB45C';g.fillRect(i*22,140-val*140,16,val*140)}})();
+</script>
+</body>
+</html>
